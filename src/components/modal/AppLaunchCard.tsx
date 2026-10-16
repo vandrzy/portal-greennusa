@@ -38,6 +38,7 @@ export const AppLaunchCard: React.FC<AppLaunchCardProps> = ({
         >
           <LocalIconImage
             variant={app.iconVariant}
+            iconPath={app.iconPath}
             altOverride={app.title}
             className="w-8 h-8 object-contain"
           />

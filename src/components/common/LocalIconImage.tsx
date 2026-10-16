@@ -3,7 +3,8 @@ import { IconVariant } from '../../types';
 import { LOCAL_ICON_ASSETS } from '../../data';
 
 export interface LocalIconImageProps {
-  variant: IconVariant;
+  variant?: IconVariant;
+  iconPath?: string;
   className?: string;
   altOverride?: string;
 }
@@ -14,19 +15,21 @@ export interface LocalIconImageProps {
  * Dilengkapi fallback SVG lokal jika gambar fisik sedang tidak tersedia.
  */
 export const LocalIconImage: React.FC<LocalIconImageProps> = ({
-  variant,
+  variant = 'cyan-tools',
+  iconPath,
   className = 'w-full h-full object-contain filter drop-shadow-sm',
   altOverride,
 }) => {
   const asset = LOCAL_ICON_ASSETS[variant];
-  const [imgSrc, setImgSrc] = useState<string>(asset.publicPath);
+  const targetSrc = iconPath || asset?.publicPath || '/assets/icons/image_603ea2.png';
+  const [imgSrc, setImgSrc] = useState<string>(targetSrc);
 
   useEffect(() => {
-    setImgSrc(asset.publicPath);
-  }, [asset.publicPath]);
+    setImgSrc(targetSrc);
+  }, [targetSrc]);
 
   const handleImageError = () => {
-    if (imgSrc !== asset.fallbackDataUri) {
+    if (asset?.fallbackDataUri && imgSrc !== asset.fallbackDataUri) {
       setImgSrc(asset.fallbackDataUri);
     }
   };
@@ -34,9 +37,8 @@ export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   return (
     <img
       src={imgSrc}
-      alt={altOverride || asset.altText}
-      data-local-asset={asset.publicPath}
-      data-asset-file={asset.fileName}
+      alt={altOverride || asset?.altText || 'Icon Aplikasi'}
+      data-local-asset={targetSrc}
       className={className}
       onError={handleImageError}
     />

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { CategoryType } from './types';
+import { PEMERINTAHAN_APPS, SWASTA_APPS } from './data';
 import { useModalScrollLock, useEscapeKey } from './hooks';
 import {
   AbstractParticleBackground,
@@ -51,7 +52,7 @@ export const App: React.FC = () => {
               category="pemerintahan"
               title="Pemerintahan"
               ariaLabel="Buka Ekosistem Aplikasi Pemerintahan"
-              backgroundTiles={['cyan-tools', 'lime-wallet', 'yellow-building']}
+              apps={PEMERINTAHAN_APPS}
               onOpenModal={handleOpenModal}
             />
 
@@ -60,7 +61,7 @@ export const App: React.FC = () => {
               category="swasta"
               title="Swasta"
               ariaLabel="Buka Ekosistem Aplikasi Swasta"
-              backgroundTiles={['purple-profile', 'coral-phone', 'cyan-tools']}
+              apps={SWASTA_APPS}
               onOpenModal={handleOpenModal}
             />
           </div>

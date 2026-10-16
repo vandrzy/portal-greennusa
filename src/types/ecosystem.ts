@@ -25,6 +25,7 @@ export interface EcosystemAppItem {
   url: string;
   category: CategoryType;
   iconVariant: IconVariant;
+  iconPath?: string;
 }
 
 export interface ForegroundTileStackItem {

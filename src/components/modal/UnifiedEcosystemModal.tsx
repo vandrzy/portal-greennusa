@@ -257,6 +257,7 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   >
                     <LocalIconImage
                       variant={displayedApp.iconVariant}
+                      iconPath={displayedApp.iconPath}
                       className="w-7 h-7 object-contain"
                     />
                   </div>
