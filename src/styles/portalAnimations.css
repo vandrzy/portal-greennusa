@@ -1,0 +1,363 @@
+:root {
+  --font-jakarta: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: #f0f2f5;
+  color: #111b21;
+}
+
+.font-headline {
+  font-family: var(--font-jakarta);
+}
+
+.font-body {
+  font-family: var(--font-inter);
+}
+
+/* Tactical folder tab shape: tab on top-left */
+.folder-back-tab {
+  clip-path: polygon(0 0, 160px 0, 200px 38px, 100% 38px, 100% 100%, 0 100%);
+}
+
+/* Pop-out icon vibrant solid glow shadows */
+.icon-glow-cyan {
+  box-shadow: 0 14px 28px -4px rgba(76, 211, 232, 0.45), 0 6px 12px -2px rgba(17, 27, 33, 0.12);
+}
+
+.icon-glow-yellow {
+  box-shadow: 0 14px 28px -4px rgba(236, 232, 70, 0.45), 0 6px 12px -2px rgba(17, 27, 33, 0.12);
+}
+
+.icon-glow-purple {
+  box-shadow: 0 14px 28px -4px rgba(140, 75, 255, 0.45), 0 6px 12px -2px rgba(17, 27, 33, 0.12);
+}
+
+.icon-glow-lime {
+  box-shadow: 0 16px 32px -4px rgba(124, 232, 74, 0.5), 0 6px 14px -2px rgba(17, 27, 33, 0.14);
+}
+
+.icon-glow-coral {
+  box-shadow: 0 14px 28px -4px rgba(232, 77, 77, 0.45), 0 6px 12px -2px rgba(17, 27, 33, 0.12);
+}
+
+/* Smooth cubic-bezier folder transitions */
+.folder-transition {
+  transition: all 0.55s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* PEEK EFFECT: Idle bobbing / subtle wave float animation */
+@keyframes peek-bob-1 {
+  0%, 100% {
+    transform: translate(-130px, -40px) rotate(-11deg) scale(0.92);
+  }
+  50% {
+    transform: translate(-130px, -48px) rotate(-12deg) scale(0.92);
+  }
+}
+
+@keyframes peek-bob-2 {
+  0%, 100% {
+    transform: translate(-65px, -46px) rotate(-5deg) scale(0.95);
+  }
+  50% {
+    transform: translate(-65px, -55px) rotate(-6deg) scale(0.95);
+  }
+}
+
+@keyframes peek-bob-3 {
+  0%, 100% {
+    transform: translate(0px, -52px) rotate(0deg) scale(0.98);
+  }
+  50% {
+    transform: translate(0px, -62px) rotate(0deg) scale(0.98);
+  }
+}
+
+@keyframes peek-bob-4 {
+  0%, 100% {
+    transform: translate(65px, -46px) rotate(5deg) scale(0.95);
+  }
+  50% {
+    transform: translate(65px, -55px) rotate(6deg) scale(0.95);
+  }
+}
+
+@keyframes peek-bob-5 {
+  0%, 100% {
+    transform: translate(130px, -40px) rotate(11deg) scale(0.92);
+  }
+  50% {
+    transform: translate(130px, -48px) rotate(12deg) scale(0.92);
+  }
+}
+
+/* Default Idle Peek States */
+.tile-stack-1 {
+  transform: translate(-130px, -40px) rotate(-11deg) scale(0.92);
+  animation: peek-bob-1 4.4s ease-in-out infinite;
+  z-index: 21;
+}
+
+.tile-stack-2 {
+  transform: translate(-65px, -46px) rotate(-5deg) scale(0.95);
+  animation: peek-bob-2 4.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+  z-index: 22;
+}
+
+.tile-stack-3 {
+  transform: translate(0px, -52px) rotate(0deg) scale(0.98);
+  animation: peek-bob-3 4.6s ease-in-out infinite;
+  animation-delay: 0.8s;
+  z-index: 23;
+}
+
+.tile-stack-4 {
+  transform: translate(65px, -46px) rotate(5deg) scale(0.95);
+  animation: peek-bob-4 5.0s ease-in-out infinite;
+  animation-delay: 0.3s;
+  z-index: 22;
+}
+
+.tile-stack-5 {
+  transform: translate(130px, -40px) rotate(11deg) scale(0.92);
+  animation: peek-bob-5 4.7s ease-in-out infinite;
+  animation-delay: 0.6s;
+  z-index: 21;
+}
+
+/* STOP idle float during hover */
+.folder-card:hover .tile-stack-1,
+.folder-card:hover .tile-stack-2,
+.folder-card:hover .tile-stack-3,
+.folder-card:hover .tile-stack-4,
+.folder-card:hover .tile-stack-5 {
+  animation: none !important;
+}
+
+/* Front pouch drops down to 48% on hover to reveal contents */
+.folder-card:hover .folder-front-pouch {
+  height: 48% !important;
+  box-shadow: 0 24px 44px -10px rgba(18, 140, 126, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* BACKGROUND PEEK TILES (SHARP, NO BLUR) */
+.tile-bg-sharp {
+  filter: none !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.4s ease;
+}
+
+.tile-bg-1 {
+  transform: translate(-120px, 10px) rotate(-12deg) scale(0.95);
+  z-index: 15;
+}
+
+.tile-bg-2 {
+  transform: translate(0px, 15px) rotate(0deg) scale(1.0);
+  z-index: 16;
+}
+
+.tile-bg-3 {
+  transform: translate(120px, 10px) rotate(12deg) scale(0.95);
+  z-index: 15;
+}
+
+/* Floating Abstract Blobs & Ambient Animation */
+@keyframes float-blob-slow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -45px) scale(1.08) rotate(12deg);
+  }
+  66% {
+    transform: translate(-25px, 20px) scale(0.95) rotate(-8deg);
+  }
+}
+
+@keyframes float-blob-reverse {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(-40px, 35px) scale(1.12) rotate(-15deg);
+  }
+  66% {
+    transform: translate(30px, -20px) scale(0.92) rotate(10deg);
+  }
+}
+
+@keyframes float-particle-drift {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-28px) translateX(14px) rotate(180deg);
+  }
+}
+
+.blob-float-1 {
+  animation: float-blob-slow 18s ease-in-out infinite;
+}
+
+.blob-float-2 {
+  animation: float-blob-reverse 22s ease-in-out infinite;
+}
+
+.blob-float-3 {
+  animation: float-blob-slow 20s ease-in-out infinite 3s;
+}
+
+.blob-float-4 {
+  animation: float-blob-reverse 16s ease-in-out infinite 1.5s;
+}
+
+.particle-float-1 {
+  animation: float-particle-drift 8s ease-in-out infinite;
+}
+
+.particle-float-2 {
+  animation: float-particle-drift 11s ease-in-out infinite 2s;
+}
+
+.particle-float-3 {
+  animation: float-particle-drift 9s ease-in-out infinite 4s;
+}
+
+.particle-float-4 {
+  animation: float-particle-drift 13s ease-in-out infinite 1s;
+}
+
+/* Hover Expansion of Tiles */
+.folder-card:hover .tile-stack-1 {
+  transform: translate(-175px, -150px) rotate(-16deg) scale(1.38) !important;
+  z-index: 31 !important;
+  opacity: 1 !important;
+}
+
+.folder-card:hover .tile-stack-2 {
+  transform: translate(-90px, -172px) rotate(-8deg) scale(1.42) !important;
+  z-index: 32 !important;
+  opacity: 1 !important;
+}
+
+.folder-card:hover .tile-stack-3 {
+  transform: translate(0px, -190px) rotate(0deg) scale(1.46) !important;
+  z-index: 35 !important;
+  opacity: 1 !important;
+}
+
+.folder-card:hover .tile-stack-4 {
+  transform: translate(90px, -172px) rotate(8deg) scale(1.42) !important;
+  z-index: 32 !important;
+  opacity: 1 !important;
+}
+
+.folder-card:hover .tile-stack-5 {
+  transform: translate(175px, -150px) rotate(16deg) scale(1.38) !important;
+  z-index: 31 !important;
+  opacity: 1 !important;
+}
+
+.folder-card:hover .tile-stack-1:hover {
+  transform: translate(-175px, -165px) rotate(-18deg) scale(1.48) !important;
+  z-index: 50 !important;
+}
+
+.folder-card:hover .tile-stack-2:hover {
+  transform: translate(-90px, -188px) rotate(-10deg) scale(1.52) !important;
+  z-index: 50 !important;
+}
+
+.folder-card:hover .tile-stack-3:hover {
+  transform: translate(0px, -206px) rotate(0deg) scale(1.56) !important;
+  z-index: 50 !important;
+}
+
+.folder-card:hover .tile-stack-4:hover {
+  transform: translate(90px, -188px) rotate(10deg) scale(1.52) !important;
+  z-index: 50 !important;
+}
+
+.folder-card:hover .tile-stack-5:hover {
+  transform: translate(175px, -165px) rotate(18deg) scale(1.48) !important;
+  z-index: 50 !important;
+}
+
+.folder-card:hover .tile-bg-1 {
+  opacity: 0.98 !important;
+  transform: translate(-124px, 14px) rotate(-8deg) scale(1.22) !important;
+}
+
+.folder-card:hover .tile-bg-2 {
+  opacity: 0.98 !important;
+  transform: translate(0px, 4px) rotate(0deg) scale(1.26) !important;
+}
+
+.folder-card:hover .tile-bg-3 {
+  opacity: 0.98 !important;
+  transform: translate(124px, 14px) rotate(8deg) scale(1.22) !important;
+}
+
+/* Modal Tooltip Triangle */
+.popover-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #ffffff;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cfd6dc #f0f2f5;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f0f2f5;
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cfd6dc;
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #25d366;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-stack-1,
+  .tile-stack-2,
+  .tile-stack-3,
+  .tile-stack-4,
+  .tile-stack-5,
+  .tile-bg-sharp,
+  .folder-transition,
+  .blob-float-1,
+  .blob-float-2,
+  .blob-float-3,
+  .blob-float-4,
+  .particle-float-1,
+  .particle-float-2,
+  .particle-float-3,
+  .particle-float-4 {
+    animation: none !important;
+    transition: none !important;
+  }
+}
