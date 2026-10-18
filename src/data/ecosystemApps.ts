@@ -8,7 +8,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://dalev.bapperida.samarindakota.go.id',
     category: 'pemerintahan',
     iconVariant: 'yellow-building',
-    iconPath: '/assets/icons/image_604148.png',
+    iconPath: '/assets/icons/pemerintahan/image_604148.png',
   },
   {
     id: 'talent-go-sepakat',
@@ -17,7 +17,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://talent.gosepakat.id',
     category: 'pemerintahan',
     iconVariant: 'purple-profile',
-    iconPath: '/assets/icons/image_603e9d.png',
+    iconPath: '/assets/icons/pemerintahan/image_603e9d.png',
   },
   {
     id: 'go-sepakat',
@@ -26,7 +26,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://gosepakat.id',
     category: 'pemerintahan',
     iconVariant: 'cyan-tools',
-    iconPath: '/assets/icons/image_603ea2.png',
+    iconPath: '/assets/icons/pemerintahan/image_603ea2.png',
   },
   {
     id: 'sandi-prakat-pramuka',
@@ -35,7 +35,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://sandi-prakat.pramukakaltim.or.id',
     category: 'pemerintahan',
     iconVariant: 'lime-wallet',
-    iconPath: '/assets/icons/image_603e81.png',
+    iconPath: '/assets/icons/pemerintahan/image_603e81.png',
   },
   {
     id: 'ppid-kaltim',
@@ -44,7 +44,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://ppid.kaltimprov.go.id',
     category: 'pemerintahan',
     iconVariant: 'coral-phone',
-    iconPath: '/assets/icons/image_604162.png',
+    iconPath: '/assets/icons/pemerintahan/image_604162.png',
   },
   {
     id: 'e-kianpuas-samarinda',
@@ -53,7 +53,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://e-kianpuas.samarindakota.go.id',
     category: 'pemerintahan',
     iconVariant: 'yellow-building',
-    iconPath: '/assets/icons/image_604148.png',
+    iconPath: '/assets/icons/pemerintahan/image_604148 copy.png',
   },
   {
     id: 'kianprima-samarinda',
@@ -62,7 +62,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://kianprima.samarindakota.go.id',
     category: 'pemerintahan',
     iconVariant: 'cyan-tools',
-    iconPath: '/assets/icons/image_603ea2.png',
+    iconPath: '/assets/icons/pemerintahan/image_603ea2 copy.png',
   },
   {
     id: 'land-management',
@@ -71,7 +71,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://landmanagement.aplikasipos.id',
     category: 'pemerintahan',
     iconVariant: 'purple-profile',
-    iconPath: '/assets/icons/image_603e9d.png',
+    iconPath: '/assets/icons/pemerintahan/image_603e9d copy.png',
   },
   {
     id: 'kur-kaltim',
@@ -80,7 +80,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     url: 'https://kurkaltim.com',
     category: 'pemerintahan',
     iconVariant: 'lime-wallet',
-    iconPath: '/assets/icons/image_603e81.png',
+    iconPath: '/assets/icons/pemerintahan/image_603e81 copy.png',
   },
 ];
 
@@ -92,7 +92,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://fixmate.id',
     category: 'swasta',
     iconVariant: 'cyan-tools',
-    iconPath: '/assets/icons/image_603ea2.png',
+    iconPath: '/assets/icons/swasta/image_603ea2.png',
   },
   {
     id: 'rajiin',
@@ -101,7 +101,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://rajiin.id',
     category: 'swasta',
     iconVariant: 'purple-profile',
-    iconPath: '/assets/icons/image_603e9d.png',
+    iconPath: '/assets/icons/swasta/image_603e9d.png',
   },
   {
     id: 'kasir-borneo-frozen-mart',
@@ -110,7 +110,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://kasirborneo.com',
     category: 'swasta',
     iconVariant: 'lime-wallet',
-    iconPath: '/assets/icons/image_603e81.png',
+    iconPath: '/assets/icons/swasta/image_603e81.png',
   },
   {
     id: 'hayyumart',
@@ -119,7 +119,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://hayyumart.com',
     category: 'swasta',
     iconVariant: 'yellow-building',
-    iconPath: '/assets/icons/image_604148.png',
+    iconPath: '/assets/icons/swasta/image_604148.png',
   },
   {
     id: 'ntn-aplikasi-pos',
@@ -128,7 +128,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://aplikasipos.id',
     category: 'swasta',
     iconVariant: 'coral-phone',
-    iconPath: '/assets/icons/image_604162.png',
+    iconPath: '/assets/icons/swasta/image_604162.png',
   },
   {
     id: 'absensi-tambang',
@@ -137,7 +137,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://absensitambang.id',
     category: 'swasta',
     iconVariant: 'cyan-tools',
-    iconPath: '/assets/icons/image_603ea2.png',
+    iconPath: '/assets/icons/swasta/image_603ea2 copy.png',
   },
   {
     id: 'sistem-pengajuan-keuangan',
@@ -146,7 +146,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://keuangan.greennusa.com',
     category: 'swasta',
     iconVariant: 'lime-wallet',
-    iconPath: '/assets/icons/image_603e81.png',
+    iconPath: '/assets/icons/swasta/image_603e81 copy.png',
   },
   {
     id: 'manajemen-inventory',
@@ -155,7 +155,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     url: 'https://inventory.greennusa.com',
     category: 'swasta',
     iconVariant: 'yellow-building',
-    iconPath: '/assets/icons/image_604148.png',
+    iconPath: '/assets/icons/swasta/image_604148 copy.png',
   },
   {
     id: 'kelola-medsos',
@@ -163,7 +163,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Platform terpusat untuk perencanaan kalender konten, penjadwalan publikasi otomatis lintas kanal, dan pemantauan performa interaksi (*engagement*) media sosial bisnis.',
     url: 'https://kelolamedsos.id',
     category: 'swasta',
-    iconVariant: 'coral-phone',
-    iconPath: '/assets/icons/image_604162.png',
+    iconVariant: 'purple-profile',
+    iconPath: '/assets/icons/swasta/image_603e9d copy.png',
   },
 ];

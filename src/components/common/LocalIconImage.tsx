@@ -24,7 +24,7 @@ export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   altOverride,
 }) => {
   const asset = LOCAL_ICON_ASSETS[variant];
-  const targetSrc = iconPath || asset?.publicPath || '/assets/icons/image_603ea2.png';
+  const targetSrc = iconPath || asset?.publicPath || '/assets/icons/pemerintahan/image_603ea2.png';
   const [imgSrc, setImgSrc] = useState<string>(targetSrc);
 
   useEffect(() => {
