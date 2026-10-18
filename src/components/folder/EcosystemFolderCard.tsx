@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CategoryType, EcosystemAppItem, IconVariant } from '../../types';
-import { LOCAL_ICON_ASSETS, FOREGROUND_STACK_CONFIG } from '../../data';
+import { CategoryType, EcosystemAppItem } from '../../types';
 import { LocalIconImage } from '../common/LocalIconImage';
 
 export interface EcosystemFolderCardProps {
@@ -10,7 +9,6 @@ export interface EcosystemFolderCardProps {
   title: string;
   ariaLabel: string;
   apps?: EcosystemAppItem[];
-  backgroundTiles?: [IconVariant, IconVariant, IconVariant];
   onOpenModal: (category: CategoryType) => void;
 }
 
@@ -47,12 +45,54 @@ const STACK_SLOT_DEFS = [
   },
 ];
 
+const DEFAULT_FOREGROUND_STACK = [
+  {
+    stackClass: 'tile-stack-1',
+    sizeClass: 'w-[88px] h-[88px]',
+    borderClass: 'border-white/80',
+    shadowClass: 'shadow-lg',
+    iconPath: '/assets/icons/pemerintahan/image_603ea2.png',
+    alt: 'Aplikasi 1',
+  },
+  {
+    stackClass: 'tile-stack-2',
+    sizeClass: 'w-[90px] h-[90px]',
+    borderClass: 'border-white/80',
+    shadowClass: 'shadow-lg',
+    iconPath: '/assets/icons/pemerintahan/image_603e9d.png',
+    alt: 'Aplikasi 2',
+  },
+  {
+    stackClass: 'tile-stack-3',
+    sizeClass: 'w-[94px] h-[94px]',
+    borderClass: 'border-white/90',
+    shadowClass: 'shadow-xl',
+    iconPath: '/assets/icons/pemerintahan/image_603e81.png',
+    alt: 'Aplikasi 3',
+  },
+  {
+    stackClass: 'tile-stack-4',
+    sizeClass: 'w-[90px] h-[90px]',
+    borderClass: 'border-white/80',
+    shadowClass: 'shadow-lg',
+    iconPath: '/assets/icons/pemerintahan/image_604148.png',
+    alt: 'Aplikasi 4',
+  },
+  {
+    stackClass: 'tile-stack-5',
+    sizeClass: 'w-[88px] h-[88px]',
+    borderClass: 'border-white/80',
+    shadowClass: 'shadow-lg',
+    iconPath: '/assets/icons/pemerintahan/image_604162.png',
+    alt: 'Aplikasi 5',
+  },
+];
+
 export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
   category,
   title,
   ariaLabel,
   apps = [],
-  backgroundTiles,
   onOpenModal,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -80,10 +120,10 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
   const stackApps: EcosystemAppItem[] = React.useMemo(() => {
     if (apps.length >= 5) {
       if (category === 'pemerintahan') {
-        // Center (slot 2) adalah DALEV BAPPERIDA (Gedung)
+        // Center (slot 2) adalah DALEV BAPPERIDA
         return [apps[2], apps[1], apps[0], apps[3], apps[4]];
       } else {
-        // Center (slot 2) adalah Kasir Borneo (Dompet/Finansial)
+        // Center (slot 2) adalah Kasir Borneo
         return [apps[3], apps[4], apps[2], apps[1], apps[0]];
       }
     }
@@ -119,12 +159,8 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
             <>
               {/* Tile 1: Left */}
               <div className="tile-bg-sharp tile-bg-1 absolute" title={peekApps[0].title}>
-                <div
-                  className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[peekApps[0].iconVariant]?.bgColor }}
-                >
+                <div className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center bg-white border border-white/80 shadow-xl">
                   <LocalIconImage
-                    variant={peekApps[0].iconVariant}
                     iconPath={peekApps[0].iconPath}
                     altOverride={peekApps[0].title}
                   />
@@ -133,12 +169,8 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
 
               {/* Tile 2: Center */}
               <div className="tile-bg-sharp tile-bg-2 absolute" title={peekApps[1].title}>
-                <div
-                  className="w-[104px] h-[104px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[peekApps[1].iconVariant]?.bgColor }}
-                >
+                <div className="w-[104px] h-[104px] rounded-2xl p-2.5 flex items-center justify-center bg-white border border-white/80 shadow-xl">
                   <LocalIconImage
-                    variant={peekApps[1].iconVariant}
                     iconPath={peekApps[1].iconPath}
                     altOverride={peekApps[1].title}
                   />
@@ -147,42 +179,11 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
 
               {/* Tile 3: Right */}
               <div className="tile-bg-sharp tile-bg-3 absolute" title={peekApps[2].title}>
-                <div
-                  className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[peekApps[2].iconVariant]?.bgColor }}
-                >
+                <div className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center bg-white border border-white/80 shadow-xl">
                   <LocalIconImage
-                    variant={peekApps[2].iconVariant}
                     iconPath={peekApps[2].iconPath}
                     altOverride={peekApps[2].title}
                   />
-                </div>
-              </div>
-            </>
-          ) : backgroundTiles ? (
-            <>
-              <div className="tile-bg-sharp tile-bg-1 absolute">
-                <div
-                  className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[backgroundTiles[0]].bgColor }}
-                >
-                  <LocalIconImage variant={backgroundTiles[0]} />
-                </div>
-              </div>
-              <div className="tile-bg-sharp tile-bg-2 absolute">
-                <div
-                  className="w-[104px] h-[104px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[backgroundTiles[1]].bgColor }}
-                >
-                  <LocalIconImage variant={backgroundTiles[1]} />
-                </div>
-              </div>
-              <div className="tile-bg-sharp tile-bg-3 absolute">
-                <div
-                  className="w-[100px] h-[100px] rounded-2xl p-2.5 flex items-center justify-center border-2 border-white/90 shadow-xl"
-                  style={{ backgroundColor: LOCAL_ICON_ASSETS[backgroundTiles[2]].bgColor }}
-                >
-                  <LocalIconImage variant={backgroundTiles[2]} />
                 </div>
               </div>
             </>
@@ -194,7 +195,6 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
           {stackApps.length === 5
             ? stackApps.map((app, index) => {
                 const slot = STACK_SLOT_DEFS[index];
-                const assetConfig = LOCAL_ICON_ASSETS[app.iconVariant];
                 return (
                   <div
                     key={slot.stackClass}
@@ -202,11 +202,9 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
                     className={`${slot.stackClass} folder-transition absolute cursor-pointer`}
                   >
                     <div
-                      className={`${slot.sizeClass} rounded-2xl ${assetConfig?.glowClass || 'icon-glow-cyan'} p-2 flex items-center justify-center border-2 ${slot.borderClass} ${slot.shadowClass} opacity-100`}
-                      style={{ backgroundColor: assetConfig?.bgColor }}
+                      className={`${slot.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${slot.borderClass} ${slot.shadowClass} opacity-100 hover:shadow-2xl transition-shadow`}
                     >
                       <LocalIconImage
-                        variant={app.iconVariant}
                         iconPath={app.iconPath}
                         altOverride={app.title}
                       />
@@ -214,15 +212,13 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
                   </div>
                 );
               })
-            : FOREGROUND_STACK_CONFIG.map((tile) => {
-                const assetConfig = LOCAL_ICON_ASSETS[tile.variant];
+            : DEFAULT_FOREGROUND_STACK.map((tile) => {
                 return (
                   <div key={tile.stackClass} className={`${tile.stackClass} folder-transition absolute cursor-pointer`}>
                     <div
-                      className={`${tile.sizeClass} rounded-2xl ${assetConfig.glowClass} p-2 flex items-center justify-center border-2 ${tile.borderClass} ${tile.shadowClass} opacity-100`}
-                      style={{ backgroundColor: assetConfig.bgColor }}
+                      className={`${tile.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${tile.borderClass} ${tile.shadowClass} opacity-100`}
                     >
-                      <LocalIconImage variant={tile.variant} altOverride={tile.alt} />
+                      <LocalIconImage iconPath={tile.iconPath} altOverride={tile.alt} />
                     </div>
                   </div>
                 );

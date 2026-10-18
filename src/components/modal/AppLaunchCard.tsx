@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { EcosystemAppItem } from '../../types';
-import { LOCAL_ICON_ASSETS } from '../../data';
 import { LocalIconImage } from '../common/LocalIconImage';
 
 export interface AppLaunchCardProps {
@@ -18,8 +17,6 @@ export const AppLaunchCard: React.FC<AppLaunchCardProps> = ({
   onHover,
   onLeave,
 }) => {
-  const asset = LOCAL_ICON_ASSETS[app.iconVariant];
-
   return (
     <div
       onMouseEnter={() => onHover?.(app)}
@@ -32,14 +29,10 @@ export const AppLaunchCard: React.FC<AppLaunchCardProps> = ({
           : 'border border-[#e1e7eb] hover:border-[#128c7e]/60'
       }`}
     >
-      {/* Icon (Tooltip lama telah dihapus sesuai permintaan) */}
+      {/* Icon Container */}
       <div className="relative flex-shrink-0 flex items-center justify-center mt-1">
-        <div
-          className="w-12 h-12 rounded-[14px] flex items-center justify-center p-2 shadow-sm ring-2 ring-[#075e54]/15 cursor-pointer transform group-hover:scale-105 transition-transform"
-          style={{ backgroundColor: asset.bgColor }}
-        >
+        <div className="w-12 h-12 rounded-[14px] bg-white border border-[#e1e7eb] flex items-center justify-center p-2 shadow-sm cursor-pointer transform group-hover:scale-105 transition-transform">
           <LocalIconImage
-            variant={app.iconVariant}
             iconPath={app.iconPath}
             altOverride={app.title}
             className="w-8 h-8 object-contain"

@@ -2,29 +2,23 @@
 
 /* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect } from 'react';
-import { IconVariant } from '../../types';
-import { LOCAL_ICON_ASSETS } from '../../data';
 
 export interface LocalIconImageProps {
-  variant?: IconVariant;
   iconPath?: string;
   className?: string;
   altOverride?: string;
 }
 
-/**
- * Komponen `LocalIconImage`
- * Menggunakan path lokal `/assets/icons/image_*.png` pada folder `public/assets/icons/`.
- * Dilengkapi fallback SVG lokal jika gambar fisik sedang tidak tersedia.
- */
+// Fallback SVG data URI jika aset gambar gagal dimuat
+const DEFAULT_FALLBACK_SVG =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'><rect x='20' y='20' width='60' height='60' rx='12' stroke='%23128c7e' stroke-width='4'/><circle cx='50' cy='50' r='14' fill='%23128c7e'/></svg>";
+
 export const LocalIconImage: React.FC<LocalIconImageProps> = ({
-  variant = 'cyan-tools',
   iconPath,
   className = 'w-full h-full object-contain filter drop-shadow-sm',
-  altOverride,
+  altOverride = 'Icon Aplikasi',
 }) => {
-  const asset = LOCAL_ICON_ASSETS[variant];
-  const targetSrc = iconPath || asset?.publicPath || '/assets/icons/pemerintahan/image_603ea2.png';
+  const targetSrc = iconPath || DEFAULT_FALLBACK_SVG;
   const [imgSrc, setImgSrc] = useState<string>(targetSrc);
 
   useEffect(() => {
@@ -32,16 +26,15 @@ export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   }, [targetSrc]);
 
   const handleImageError = () => {
-    if (asset?.fallbackDataUri && imgSrc !== asset.fallbackDataUri) {
-      setImgSrc(asset.fallbackDataUri);
+    if (imgSrc !== DEFAULT_FALLBACK_SVG) {
+      setImgSrc(DEFAULT_FALLBACK_SVG);
     }
   };
 
   return (
     <img
       src={imgSrc}
-      alt={altOverride || asset?.altText || 'Icon Aplikasi'}
-      data-local-asset={targetSrc}
+      alt={altOverride}
       className={className}
       onError={handleImageError}
     />

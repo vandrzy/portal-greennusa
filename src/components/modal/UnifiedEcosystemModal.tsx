@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { CategoryType, EcosystemAppItem } from '../../types';
-import { PEMERINTAHAN_APPS, SWASTA_APPS, LOCAL_ICON_ASSETS } from '../../data';
+import { PEMERINTAHAN_APPS, SWASTA_APPS } from '../../data';
 import { AppLaunchCard } from './AppLaunchCard';
 import { LocalIconImage } from '../common/LocalIconImage';
 
@@ -253,13 +253,10 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
 
                 {/* Identitas Aplikasi */}
                 <div className="flex items-center gap-3.5 pt-1">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center p-2.5 shadow-sm flex-shrink-0 border border-white/80"
-                    style={{ backgroundColor: LOCAL_ICON_ASSETS[displayedApp.iconVariant]?.bgColor }}
-                  >
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#e1e7eb] flex items-center justify-center p-2.5 shadow-sm flex-shrink-0">
                     <LocalIconImage
-                      variant={displayedApp.iconVariant}
                       iconPath={displayedApp.iconPath}
+                      altOverride={displayedApp.title}
                       className="w-7 h-7 object-contain"
                     />
                   </div>
