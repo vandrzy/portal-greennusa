@@ -29,3 +29,11 @@ export async function verifyAuthToken(token: string): Promise<TokenPayload | nul
     return null;
   }
 }
+
+export async function getAuthSessionFromRequest(request: {
+  cookies: { get: (name: string) => { value: string } | undefined };
+}): Promise<TokenPayload | null> {
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifyAuthToken(token);
+}

@@ -1,164 +1,204 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { EcosystemAppItem } from '@/types';
-import { PEMERINTAHAN_APPS, SWASTA_APPS } from '@/data/ecosystemApps';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { EcosystemAppItem, CategoryType } from '@/types';
 
-const STORAGE_KEY = 'greennusa_admin_apps_storage';
+export interface AppPayload {
+  title: string;
+  description: string;
+  url: string;
+  category: CategoryType;
+  icon?: File | string | null;
+  iconPath?: string;
+  iconFile?: File | null;
+}
 
 interface AdminAppsContextType {
   apps: EcosystemAppItem[];
   isLoading: boolean;
-  addApp: (newApp: Omit<EcosystemAppItem, 'id'>) => EcosystemAppItem;
-  updateApp: (id: string, updatedFields: Partial<Omit<EcosystemAppItem, 'id'>>) => boolean;
-  deleteApp: (id: string) => boolean;
-  resetToDefault: () => void;
   pemerintahanCount: number;
   swastaCount: number;
   totalCount: number;
+  refreshData: () => Promise<void>;
+  addApp: (
+    payload: AppPayload | FormData
+  ) => Promise<{ success: boolean; message?: string; data?: EcosystemAppItem }>;
+  updateApp: (
+    id: string,
+    payload: Partial<AppPayload> | FormData
+  ) => Promise<{ success: boolean; message?: string; data?: EcosystemAppItem }>;
+  deleteApp: (id: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AdminAppsContext = createContext<AdminAppsContextType | undefined>(undefined);
 
 export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   const [apps, setApps] = useState<EcosystemAppItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [pemerintahanCount, setPemerintahanCount] = useState<number>(0);
+  const [swastaCount, setSwastaCount] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
-  // Initialize data on client mount
+  // Fetch apps & dashboard metrics from Backend APIs
+  const refreshData = useCallback(async () => {
+    try {
+      const [appsRes, dashRes] = await Promise.all([
+        fetch('/api/admin/apps', { cache: 'no-store' }),
+        fetch('/api/admin/dashboard', { cache: 'no-store' }),
+      ]);
+
+      // Handle unauthenticated session
+      if (appsRes.status === 401 || dashRes.status === 401) {
+        router.push('/login');
+        return;
+      }
+
+      if (appsRes.ok) {
+        const appsJson = await appsRes.json();
+        if (appsJson.success && Array.isArray(appsJson.data)) {
+          setApps(appsJson.data);
+        }
+      }
+
+      if (dashRes.ok) {
+        const dashJson = await dashRes.json();
+        if (dashJson.success && dashJson.data) {
+          setPemerintahanCount(dashJson.data.pemerintahan || 0);
+          setSwastaCount(dashJson.data.swasta || 0);
+          setTotalCount(dashJson.data.total || 0);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load admin data from API:', err);
+    }
+  }, [router]);
+
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setApps(parsed);
-          setIsLoading(false);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to parse cached apps from localStorage:', e);
+    let isMounted = true;
+    setIsLoading(true);
+    refreshData().finally(() => {
+      if (isMounted) setIsLoading(false);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshData]);
+
+  // Helper to format payload into FormData
+  const toFormData = (payload: AppPayload | Partial<AppPayload> | FormData): FormData => {
+    if (payload instanceof FormData) return payload;
+
+    const fd = new FormData();
+    if (payload.title) fd.append('title', payload.title);
+    if (payload.description) fd.append('description', payload.description);
+    if (payload.url) fd.append('url', payload.url);
+    if (payload.category) fd.append('category', payload.category);
+
+    const fileToUpload = payload.iconFile || payload.icon;
+    if (fileToUpload instanceof File) {
+      fd.append('icon', fileToUpload);
+    } else if (typeof fileToUpload === 'string' && fileToUpload.startsWith('data:image/')) {
+      fd.append('icon', fileToUpload);
+    } else if (payload.iconPath) {
+      fd.append('icon', payload.iconPath);
     }
 
-    // Fallback: load from static dataset or fetch /api/apps
-    async function loadInitial() {
-      try {
-        const res = await fetch('/api/apps');
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setApps(json.data);
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
-          } catch {}
-          return;
-        }
-      } catch (err) {
-        console.warn('Failed to fetch /api/apps, using static data:', err);
-      }
-
-      const defaultData = [...PEMERINTAHAN_APPS, ...SWASTA_APPS];
-      setApps(defaultData);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
-      } catch {}
-    }
-
-    loadInitial().finally(() => setIsLoading(false));
-  }, []);
-
-  const saveToStorage = (updatedApps: EcosystemAppItem[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedApps));
-    } catch (e) {
-      console.error('Failed to save apps to localStorage:', e);
-    }
+    return fd;
   };
 
-  const addApp = useCallback((newAppData: Omit<EcosystemAppItem, 'id'>): EcosystemAppItem => {
-    const generatedId = `app-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    const createdApp: EcosystemAppItem = {
-      id: generatedId,
-      ...newAppData,
-    };
+  const addApp = useCallback(
+    async (payload: AppPayload | FormData) => {
+      try {
+        const body = toFormData(payload);
+        const res = await fetch('/api/admin/apps', {
+          method: 'POST',
+          body,
+        });
 
-    setApps((prev) => {
-      const next = [createdApp, ...prev];
-      saveToStorage(next);
-      return next;
-    });
+        if (res.status === 401) {
+          router.push('/login');
+          return { success: false, message: 'Sesi telah berakhir. Silakan login kembali.' };
+        }
 
-    return createdApp;
-  }, []);
+        const json = await res.json();
+        if (json.success) {
+          await refreshData();
+        }
+        return json;
+      } catch (err) {
+        console.error('Error adding app:', err);
+        return { success: false, message: 'Gagal menghubungi server saat menambah aplikasi' };
+      }
+    },
+    [refreshData, router]
+  );
 
   const updateApp = useCallback(
-    (id: string, updatedFields: Partial<Omit<EcosystemAppItem, 'id'>>): boolean => {
-      let found = false;
-      setApps((prev) => {
-        const next = prev.map((item) => {
-          if (item.id === id) {
-            found = true;
-            return { ...item, ...updatedFields };
-          }
-          return item;
+    async (id: string, payload: Partial<AppPayload> | FormData) => {
+      try {
+        const body = toFormData(payload);
+        const res = await fetch(`/api/admin/apps/${id}`, {
+          method: 'PUT',
+          body,
         });
-        if (found) {
-          saveToStorage(next);
-        }
-        return next;
-      });
-      return found;
-    },
-    []
-  );
 
-  const deleteApp = useCallback((id: string): boolean => {
-    let found = false;
-    setApps((prev) => {
-      const next = prev.filter((item) => {
-        if (item.id === id) {
-          found = true;
-          return false;
+        if (res.status === 401) {
+          router.push('/login');
+          return { success: false, message: 'Sesi telah berakhir. Silakan login kembali.' };
         }
-        return true;
-      });
-      if (found) {
-        saveToStorage(next);
+
+        const json = await res.json();
+        if (json.success) {
+          await refreshData();
+        }
+        return json;
+      } catch (err) {
+        console.error('Error updating app:', err);
+        return { success: false, message: 'Gagal menghubungi server saat memperbarui aplikasi' };
       }
-      return next;
-    });
-    return found;
-  }, []);
-
-  const resetToDefault = useCallback(() => {
-    const defaultData = [...PEMERINTAHAN_APPS, ...SWASTA_APPS];
-    setApps(defaultData);
-    saveToStorage(defaultData);
-  }, []);
-
-  const pemerintahanCount = useMemo(
-    () => apps.filter((a) => a.category === 'pemerintahan').length,
-    [apps]
+    },
+    [refreshData, router]
   );
 
-  const swastaCount = useMemo(
-    () => apps.filter((a) => a.category === 'swasta').length,
-    [apps]
-  );
+  const deleteApp = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/admin/apps/${id}`, {
+          method: 'DELETE',
+        });
 
-  const totalCount = apps.length;
+        if (res.status === 401) {
+          router.push('/login');
+          return { success: false, message: 'Sesi telah berakhir. Silakan login kembali.' };
+        }
+
+        const json = await res.json();
+        if (json.success) {
+          await refreshData();
+        }
+        return json;
+      } catch (err) {
+        console.error('Error deleting app:', err);
+        return { success: false, message: 'Gagal menghubungi server saat menghapus aplikasi' };
+      }
+    },
+    [refreshData, router]
+  );
 
   return (
     <AdminAppsContext.Provider
       value={{
         apps,
         isLoading,
-        addApp,
-        updateApp,
-        deleteApp,
-        resetToDefault,
         pemerintahanCount,
         swastaCount,
         totalCount,
+        refreshData,
+        addApp,
+        updateApp,
+        deleteApp,
       }}
     >
       {children}

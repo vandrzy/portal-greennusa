@@ -13,12 +13,21 @@ export interface AppFormModalProps {
     description: string;
     url: string;
     category: CategoryType;
-    iconPath: string;
-  }) => void;
+    iconFile?: File | null;
+    iconPath?: string;
+  }) => Promise<{ success: boolean; message?: string } | void> | void;
   initialData?: EcosystemAppItem | null;
 }
 
 const DEFAULT_FALLBACK_ICON = '/assets/icons/pemerintahan/image_604148.png';
+const ALLOWED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+  'image/svg+xml',
+  'image/gif',
+];
 
 export const AppFormModal: React.FC<AppFormModalProps> = ({
   isOpen,
@@ -32,8 +41,10 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
   const [category, setCategory] = useState<CategoryType>('pemerintahan');
-  const [iconPath, setIconPath] = useState('');
+  const [iconPreview, setIconPreview] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -42,59 +53,80 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setErrorMessage('');
+      setIsSubmitting(false);
+      setSelectedFile(null);
+
       if (initialData) {
         setTitle(initialData.title || '');
         setDescription(initialData.description || '');
         setUrl(initialData.url || '');
         setCategory(initialData.category || 'pemerintahan');
-        setIconPath(initialData.iconPath || '');
+        setIconPreview(initialData.iconPath || '');
       } else {
         setTitle('');
         setDescription('');
         setUrl('');
         setCategory('pemerintahan');
-        setIconPath('');
+        setIconPreview('');
       }
     }
   }, [isOpen, initialData]);
 
   // Lock body scroll and enable escape key listener
   useModalScrollLock(isOpen);
-  useEscapeKey(onClose, isOpen);
+  useEscapeKey(onClose, isOpen && !isSubmitting);
 
   // Handle outside click
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isSubmitting) return;
     if (modalContainerRef.current && !modalContainerRef.current.contains(e.target as Node)) {
       onClose();
     }
   };
 
-  // Handle image upload & preview conversion
+  // Handle image upload with strict client-side validation & live preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('File yang diunggah harus berupa gambar (PNG, JPG, SVG, WebP)');
+    // Strict image validation
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = /\.(png|jpe?g|webp|svg|gif)$/i.test(fileName);
+    const isValidMime = ALLOWED_IMAGE_TYPES.includes(fileType);
+
+    if (!isValidMime && !isValidExtension) {
+      setErrorMessage('File icon harus berupa gambar (PNG, JPG, JPEG, WEBP, SVG, atau GIF)');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Ukuran file gambar melebihi batas maksimal 5MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setSelectedFile(file);
+    setErrorMessage('');
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       if (base64) {
-        setIconPath(base64);
-        setErrorMessage('');
+        setIconPreview(base64);
       }
     };
     reader.readAsDataURL(file);
   };
 
   const handleTriggerUpload = () => {
-    fileInputRef.current?.click();
+    if (!isSubmitting) {
+      fileInputRef.current?.click();
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -111,18 +143,35 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       return;
     }
 
-    // Default icon fallback jika user belum memilih gambar
-    const finalIcon = iconPath.trim() || DEFAULT_FALLBACK_ICON;
+    if (!isEditMode && !selectedFile && !iconPreview) {
+      setErrorMessage('File icon aplikasi wajib diunggah');
+      return;
+    }
 
-    onSave({
-      title: title.trim(),
-      description: description.trim(),
-      url: url.trim(),
-      category,
-      iconPath: finalIcon,
-    });
+    setIsSubmitting(true);
 
-    onClose();
+    try {
+      const res = await onSave({
+        title: title.trim(),
+        description: description.trim(),
+        url: url.trim(),
+        category,
+        iconFile: selectedFile,
+        iconPath: iconPreview || DEFAULT_FALLBACK_ICON,
+      });
+
+      if (res && typeof res === 'object' && res.success === false) {
+        setErrorMessage(res.message || 'Terjadi kesalahan saat menyimpan data');
+        setIsSubmitting(false);
+        return;
+      }
+
+      onClose();
+    } catch (err: unknown) {
+      const error = err as Error;
+      setErrorMessage(error.message || 'Gagal menyimpan aplikasi');
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -187,8 +236,9 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               aria-label="Tutup form"
-              className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#111b21] flex items-center justify-center font-bold text-sm transition-colors border border-[#d1d7db]"
+              className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#111b21] flex items-center justify-center font-bold text-sm transition-colors border border-[#d1d7db] disabled:opacity-50"
             >
               ✕
             </button>
@@ -196,8 +246,14 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
 
           {/* Error Notice */}
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-[#fee2e2]/80 border border-[#fca5a5] text-[#991b1b] text-xs font-medium">
-              {errorMessage}
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-[#fee2e2]/90 border border-[#fca5a5] text-[#991b1b] text-xs font-medium flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 flex-shrink-0 text-[#dc2626]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{errorMessage}</span>
             </div>
           )}
 
@@ -215,10 +271,11 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                 id="appName"
                 type="text"
                 required
+                disabled={isSubmitting}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Contoh: DALEV BAPPERIDA, FixMate, Rajiin"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
               />
             </div>
 
@@ -234,14 +291,15 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                 id="appDescription"
                 required
                 rows={3}
+                disabled={isSubmitting}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Jelaskan fungsi utama dan manfaat aplikasi ini bagi pengguna..."
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all resize-none"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all resize-none disabled:opacity-60"
               />
             </div>
 
-            {/* Field 3: URL Aplikasi & Field 4: Dropdown Kategori (Row on Desktop) */}
+            {/* Field 3: URL Aplikasi & Field 4: Dropdown Kategori */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label
@@ -254,10 +312,11 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                   id="appUrl"
                   type="text"
                   required
+                  disabled={isSubmitting}
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://aplikasi.id"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
                 />
               </div>
 
@@ -270,9 +329,10 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                 </label>
                 <select
                   id="appCategory"
+                  disabled={isSubmitting}
                   value={category}
                   onChange={(e) => setCategory(e.target.value as CategoryType)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all cursor-pointer font-medium"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all cursor-pointer font-medium disabled:opacity-60"
                 >
                   <option value="pemerintahan">Pemerintahan</option>
                   <option value="swasta">Swasta</option>
@@ -280,39 +340,42 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
               </div>
             </div>
 
-            {/* Field 5: Form Upload Icon & Preview */}
+            {/* Field 5: Form Upload Icon & Preview (Gambar Khusus) */}
             <div className="flex flex-col gap-1.5">
               <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
                 Icon Aplikasi & Preview
               </label>
 
-              {/* Hidden Native File Input */}
+              {/* Hidden Native File Input with Strict MIME Accept */}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,image/gif"
                 onChange={handleFileChange}
+                disabled={isSubmitting}
                 className="hidden"
               />
 
               {/* Upload Box with Integrated Preview */}
               <div
                 onClick={handleTriggerUpload}
-                className="group relative w-full border-2 border-dashed border-[#bce8d4] hover:border-[#128c7e] bg-[#f7fbf9] hover:bg-[#edf9f3] rounded-2xl p-4 transition-all duration-200 cursor-pointer flex items-center gap-4"
+                className={`group relative w-full border-2 border-dashed border-[#bce8d4] hover:border-[#128c7e] bg-[#f7fbf9] hover:bg-[#edf9f3] rounded-2xl p-4 transition-all duration-200 cursor-pointer flex items-center gap-4 ${
+                  isSubmitting ? 'opacity-60 pointer-events-none' : ''
+                }`}
               >
                 {/* Preview Box */}
                 <div className="w-16 h-16 rounded-2xl bg-white border border-[#d8e0e5] p-2 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden group-hover:scale-105 transition-transform">
-                  {iconPath ? (
-                    iconPath.startsWith('data:') || iconPath.startsWith('blob:') ? (
+                  {iconPreview ? (
+                    iconPreview.startsWith('data:') || iconPreview.startsWith('blob:') ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={iconPath}
+                        src={iconPreview}
                         alt="Preview icon"
                         className="w-full h-full object-contain filter drop-shadow-sm"
                       />
                     ) : (
                       <LocalIconImage
-                        iconPath={iconPath}
+                        iconPath={iconPreview}
                         altOverride="Preview icon"
                         className="w-full h-full object-contain filter drop-shadow-sm"
                       />
@@ -338,16 +401,18 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-headline text-xs font-bold text-[#075e54] group-hover:underline">
-                      {iconPath ? 'Klik untuk mengganti icon' : 'Klik untuk unggah icon gambar'}
+                      {iconPreview ? 'Klik untuk mengganti icon' : 'Klik untuk unggah icon gambar'}
                     </span>
                     <span className="text-[10px] bg-[#e6f7ef] text-[#075e54] px-2 py-0.5 rounded-full font-bold">
-                      PNG / JPG / SVG
+                      Khusus Gambar
                     </span>
                   </div>
                   <p className="text-[11px] text-[#54656f] mt-0.5 truncate">
-                    {iconPath
-                      ? 'Icon siap digunakan. Klik area ini jika ingin mengganti dengan gambar lain.'
-                      : 'Ukuran rekomendasi 128x128px atau rasio 1:1 untuk tampilan optimal.'}
+                    {iconPreview
+                      ? selectedFile
+                        ? `File dipilih: ${selectedFile.name}`
+                        : 'Icon saat ini aktif. Klik untuk memilih gambar pengganti.'
+                      : 'Hanya format PNG, JPG, JPEG, WebP, SVG, GIF (Maks. 5MB).'}
                   </p>
                 </div>
               </div>
@@ -358,19 +423,33 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#54656f] font-headline text-xs font-bold transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-xl bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#54656f] font-headline text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 id="submitAppModalBtn"
-                className="px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] text-white font-headline text-xs font-bold shadow-[0_4px_12px_rgba(7,94,84,0.25)] transition-all flex items-center gap-2 cursor-pointer"
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] active:bg-[#053e37] text-white font-headline text-xs font-bold shadow-[0_4px_12px_rgba(7,94,84,0.25)] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Simpan</span>
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Simpan</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
