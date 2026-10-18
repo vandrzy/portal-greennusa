@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { EcosystemAppItem } from '../../types';
 import { LOCAL_ICON_ASSETS } from '../../data';

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import { CategoryType } from './types';
 import { PEMERINTAHAN_APPS, SWASTA_APPS } from './data';

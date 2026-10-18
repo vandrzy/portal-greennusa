@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { CategoryType, EcosystemAppItem } from '../../types';
 import { PEMERINTAHAN_APPS, SWASTA_APPS, LOCAL_ICON_ASSETS } from '../../data';

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { CategoryType, EcosystemAppItem, IconVariant } from '../../types';
 import { LOCAL_ICON_ASSETS, FOREGROUND_STACK_CONFIG } from '../../data';
