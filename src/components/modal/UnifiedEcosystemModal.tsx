@@ -23,6 +23,7 @@ const renderFormattedText = (text: string) => {
 export interface UnifiedEcosystemModalProps {
   isOpen: boolean;
   activeCategory: CategoryType;
+  apps?: EcosystemAppItem[];
   onSwitchCategory: (category: CategoryType) => void;
   onClose: () => void;
 }
@@ -30,6 +31,7 @@ export interface UnifiedEcosystemModalProps {
 export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
   isOpen,
   activeCategory,
+  apps,
   onSwitchCategory,
   onClose,
 }) => {
@@ -60,9 +62,19 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
     onSwitchCategory(category);
   };
 
-  const appsToRender = activeCategory === 'pemerintahan' ? PEMERINTAHAN_APPS : SWASTA_APPS;
+  const categoryApps =
+    apps && apps.length > 0
+      ? apps.filter((app) => app.category === activeCategory)
+      : activeCategory === 'pemerintahan'
+      ? PEMERINTAHAN_APPS
+      : SWASTA_APPS;
+
+  const appsToRender = categoryApps;
   const categoryTitle = activeCategory === 'pemerintahan' ? 'Pemerintahan' : 'Swasta';
-  const badgeText = activeCategory === 'pemerintahan' ? '9 Aplikasi' : '9 Solusi Bisnis';
+  const badgeText =
+    activeCategory === 'pemerintahan'
+      ? `${appsToRender.length} Aplikasi`
+      : `${appsToRender.length} Solusi Bisnis`;
 
   return (
     <>

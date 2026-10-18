@@ -194,35 +194,35 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
         <div className="absolute inset-x-0 bottom-[236px] h-0 flex items-center justify-center z-25 overflow-visible pointer-events-none group-hover:pointer-events-auto">
           {stackApps.length === 5
             ? stackApps.map((app, index) => {
-                const slot = STACK_SLOT_DEFS[index];
-                return (
+              const slot = STACK_SLOT_DEFS[index];
+              return (
+                <div
+                  key={slot.stackClass}
+                  title={app.title}
+                  className={`${slot.stackClass} folder-transition absolute cursor-pointer`}
+                >
                   <div
-                    key={slot.stackClass}
-                    title={app.title}
-                    className={`${slot.stackClass} folder-transition absolute cursor-pointer`}
+                    className={`${slot.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${slot.borderClass} ${slot.shadowClass} opacity-100 hover:shadow-2xl transition-shadow`}
                   >
-                    <div
-                      className={`${slot.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${slot.borderClass} ${slot.shadowClass} opacity-100 hover:shadow-2xl transition-shadow`}
-                    >
-                      <LocalIconImage
-                        iconPath={app.iconPath}
-                        altOverride={app.title}
-                      />
-                    </div>
+                    <LocalIconImage
+                      iconPath={app.iconPath}
+                      altOverride={app.title}
+                    />
                   </div>
-                );
-              })
+                </div>
+              );
+            })
             : DEFAULT_FOREGROUND_STACK.map((tile) => {
-                return (
-                  <div key={tile.stackClass} className={`${tile.stackClass} folder-transition absolute cursor-pointer`}>
-                    <div
-                      className={`${tile.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${tile.borderClass} ${tile.shadowClass} opacity-100`}
-                    >
-                      <LocalIconImage iconPath={tile.iconPath} altOverride={tile.alt} />
-                    </div>
+              return (
+                <div key={tile.stackClass} className={`${tile.stackClass} folder-transition absolute cursor-pointer`}>
+                  <div
+                    className={`${tile.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${tile.borderClass} ${tile.shadowClass} opacity-100`}
+                  >
+                    <LocalIconImage iconPath={tile.iconPath} altOverride={tile.alt} />
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
         </div>
 
         {/* LAYER 3: FRONT POUCH */}

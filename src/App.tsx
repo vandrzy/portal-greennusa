@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { CategoryType } from './types';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { CategoryType, EcosystemAppItem } from './types';
 import { PEMERINTAHAN_APPS, SWASTA_APPS } from './data';
 import { useModalScrollLock, useEscapeKey } from './hooks';
 import {
@@ -16,6 +16,33 @@ import {
 export const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('pemerintahan');
+  const [apps, setApps] = useState<EcosystemAppItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchApps() {
+      try {
+        const response = await fetch('/api/apps');
+        const result = await response.json();
+        if (isMounted && result.success && Array.isArray(result.data)) {
+          setApps(result.data);
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data aplikasi:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchApps();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleOpenModal = useCallback((category: CategoryType) => {
     setActiveCategory(category);
@@ -29,6 +56,17 @@ export const App: React.FC = () => {
   const handleSwitchCategory = useCallback((category: CategoryType) => {
     setActiveCategory(category);
   }, []);
+
+  // Filter apps by category with fallback to static apps if loading/empty
+  const pemerintahanApps = useMemo(() => {
+    const filtered = apps.filter((app) => app.category === 'pemerintahan');
+    return filtered.length > 0 ? filtered : PEMERINTAHAN_APPS;
+  }, [apps]);
+
+  const swastaApps = useMemo(() => {
+    const filtered = apps.filter((app) => app.category === 'swasta');
+    return filtered.length > 0 ? filtered : SWASTA_APPS;
+  }, [apps]);
 
   // Lock body scroll when modal is open
   useModalScrollLock(isModalOpen);
@@ -54,7 +92,7 @@ export const App: React.FC = () => {
               category="pemerintahan"
               title="Pemerintahan"
               ariaLabel="Buka Ekosistem Aplikasi Pemerintahan"
-              apps={PEMERINTAHAN_APPS}
+              apps={pemerintahanApps}
               onOpenModal={handleOpenModal}
             />
 
@@ -63,7 +101,7 @@ export const App: React.FC = () => {
               category="swasta"
               title="Swasta"
               ariaLabel="Buka Ekosistem Aplikasi Swasta"
-              apps={SWASTA_APPS}
+              apps={swastaApps}
               onOpenModal={handleOpenModal}
             />
           </div>
@@ -77,6 +115,7 @@ export const App: React.FC = () => {
       <UnifiedEcosystemModal
         isOpen={isModalOpen}
         activeCategory={activeCategory}
+        apps={apps.length > 0 ? apps : undefined}
         onSwitchCategory={handleSwitchCategory}
         onClose={handleCloseModal}
       />
