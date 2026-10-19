@@ -55,6 +55,30 @@ async function main() {
     console.log(`📦 Seeded App: [${createdApp.category}] ${createdApp.title} -> UUID: ${createdApp.id}`);
   }
 
+  // 3. Seed data awal Konten Portal berdasarkan konten statis yang ada saat ini
+  const portalContentData = {
+    logoUrl: '/assets/logo/logo-green.png',
+    headerText: 'Satu Pintu Akses Aplikasi GreenNusa Computindo',
+    paragraphText:
+      'Portal integrasi seluruh layanan digital dan aplikasi ekosistem resmi GreenNusa Computindo guna mendukung efisiensi serta kemudahan akses solusi teknologi bagi instansi pemerintahan dan sektor swasta.',
+    folder1Title: 'Pemerintahan',
+    folder1Subtitle: 'EKOSISTEM APLIKASI',
+    folder2Title: 'Swasta',
+    folder2Subtitle: 'EKOSISTEM APLIKASI',
+    whatsappLink: 'https://wa.me/6281348039947',
+  };
+
+  const portalContent = await prisma.portalContent.upsert({
+    where: { id: 1 },
+    update: portalContentData,
+    create: {
+      id: 1,
+      ...portalContentData,
+    },
+  });
+
+  console.log(`📑 Seeded PortalContent: ID ${portalContent.id} (${portalContent.headerText})`);
+
   console.log(`🎉 Seeding selesai! Total aplikasi: ${appsToSeed.length}`);
 }
 

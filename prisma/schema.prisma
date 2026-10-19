@@ -38,3 +38,27 @@ model App {
   @@index([category])
   @@map("apps")
 }
+
+model PortalContent {
+  id              Int      @id @default(autoincrement())
+  logoUrl         String   @default("/assets/logo/logo-green.png") @map("logo_url")
+  headerText      String   @map("header_text")
+  paragraphText   String   @db.Text @map("paragraph_text")
+
+  // Bagian Depan Folder 1 (Pemerintahan) - 2 Input
+  folder1Title    String   @map("folder1_title")
+  folder1Subtitle String   @map("folder1_subtitle")
+
+  // Bagian Depan Folder 2 (Swasta) - 2 Input
+  folder2Title    String   @map("folder2_title")
+  folder2Subtitle String   @map("folder2_subtitle")
+
+  // Link Floating WhatsApp
+  whatsappLink    String   @map("whatsapp_link")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("portal_contents")
+}
+

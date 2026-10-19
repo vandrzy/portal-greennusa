@@ -75,9 +75,9 @@ export const App: React.FC = () => {
   useEscapeKey(handleCloseModal, isModalOpen);
 
   return (
-    <div className="bg-[#f0f2f5] text-[#111b21] antialiased min-h-screen flex flex-col font-body selection:bg-[#e9edf0] selection:text-[#25d366] relative overflow-x-hidden">
-      {/* Dynamic Abstract Particles & Glowing Brand Blobs Background */}
-      <AbstractParticleBackground />
+    <div className="text-[#111b21] antialiased min-h-screen flex flex-col font-body selection:bg-[#e9edf0] selection:text-[#25d366] relative overflow-x-hidden">
+      {/* Dynamic Abstract Particles & Glowing Brand Blobs Background with Fixed Theme default.png */}
+      <AbstractParticleBackground backgroundImage="/assets/backgroundTheme/default.png" />
 
       {/* Main Canvas */}
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-start">

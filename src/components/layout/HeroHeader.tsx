@@ -6,7 +6,7 @@ export const HeroHeader: React.FC = () => {
     <header className="text-center mt-10 mb-8 max-w-3xl mx-auto flex flex-col items-center">
       {/* Brand Logo */}
       <img
-        src="/assets/logo/logo green.png"
+        src="/assets/logo/logo-green.png"
         alt="GreenNusa Computindo"
         className="h-[110px] w-auto object-contain mb-4"
       />
