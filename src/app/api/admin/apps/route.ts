@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthSessionFromRequest } from '@/lib/auth';
 import { saveIconFile, deleteOldIconFile, INVALID_IMAGE_ERROR_MESSAGE } from '@/lib/iconStorage';
-import { PEMERINTAHAN_APPS, SWASTA_APPS } from '@/data/ecosystemApps';
 import { AppCategory } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -22,58 +21,46 @@ export async function GET(request: NextRequest) {
     const categoryParam = searchParams.get('category');
     const searchParam = searchParams.get('search');
 
-    let formattedApps = [];
+    const whereClause: {
+      category?: AppCategory;
+      OR?: Array<{
+        title?: { contains: string };
+        description?: { contains: string };
+      }>;
+    } = {};
 
-    try {
-      const whereClause: {
-        category?: AppCategory;
-        OR?: Array<{
-          title?: { contains: string };
-          description?: { contains: string };
-        }>;
-      } = {};
-
-      if (categoryParam === 'pemerintahan' || categoryParam === 'swasta') {
-        whereClause.category = categoryParam as AppCategory;
-      }
-
-      if (searchParam && searchParam.trim()) {
-        const query = searchParam.trim();
-        whereClause.OR = [
-          { title: { contains: query } },
-          { description: { contains: query } },
-        ];
-      }
-
-      const apps = await prisma.app.findMany({
-        where: whereClause,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      formattedApps = apps.map((app) => ({
-        id: app.id,
-        title: app.title,
-        description: app.description,
-        url: app.url,
-        category: app.category,
-        iconPath: app.iconPath.startsWith('/api/icon')
-          ? app.iconPath
-          : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
-        rawIconPath: app.iconPath,
-        createdAt: app.createdAt,
-        updatedAt: app.updatedAt,
-      }));
-    } catch (dbError) {
-      console.warn('Database query failed in GET /api/admin/apps, using fallback:', dbError);
-      // Fallback data
-      const allStatic = [...PEMERINTAHAN_APPS, ...SWASTA_APPS];
-      formattedApps = allStatic.map((app) => ({
-        ...app,
-        rawIconPath: app.iconPath,
-      }));
+    if (categoryParam === 'pemerintahan' || categoryParam === 'swasta') {
+      whereClause.category = categoryParam as AppCategory;
     }
+
+    if (searchParam && searchParam.trim()) {
+      const query = searchParam.trim();
+      whereClause.OR = [
+        { title: { contains: query } },
+        { description: { contains: query } },
+      ];
+    }
+
+    const apps = await prisma.app.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    const formattedApps = apps.map((app) => ({
+      id: app.id,
+      title: app.title,
+      description: app.description,
+      url: app.url,
+      category: app.category,
+      iconPath: app.iconPath.startsWith('/api/icon')
+        ? app.iconPath
+        : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
+      rawIconPath: app.iconPath,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
+    }));
 
     return NextResponse.json(
       {

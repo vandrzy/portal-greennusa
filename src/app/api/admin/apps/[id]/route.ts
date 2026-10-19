@@ -83,14 +83,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id } = params;
 
     // 1. Cek aplikasi lama di database
-    let existingApp = null;
-    try {
-      existingApp = await prisma.app.findUnique({
-        where: { id },
-      });
-    } catch (dbErr) {
-      console.warn('Database error when finding app for update:', dbErr);
-    }
+    const existingApp = await prisma.app.findUnique({
+      where: { id },
+    });
 
     if (!existingApp) {
       return NextResponse.json(

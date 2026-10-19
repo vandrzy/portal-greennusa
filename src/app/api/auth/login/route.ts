@@ -26,34 +26,15 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanIdentifier = identifier.trim();
-    let user = null;
 
-    try {
-      user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { username: cleanIdentifier },
-            { email: cleanIdentifier },
-          ],
-        },
-      });
-    } catch (dbError) {
-      console.warn('Database query failed, checking fallback credentials:', dbError);
-      // Fallback untuk admin default seed jika koneksi database lokal belum aktif
-      if (
-        (cleanIdentifier === 'admin' || cleanIdentifier === 'admin@greennusa.id') &&
-        password === 'AdminGreenNusa123!'
-      ) {
-        user = {
-          id: 'seed-admin-uuid',
-          name: 'Administrator GreenNusa',
-          username: 'admin',
-          email: 'admin@greennusa.id',
-          password: await bcrypt.hash('AdminGreenNusa123!', 10),
-          role: 'admin',
-        };
-      }
-    }
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: cleanIdentifier },
+          { email: cleanIdentifier },
+        ],
+      },
+    });
 
     if (!user) {
       return NextResponse.json(
