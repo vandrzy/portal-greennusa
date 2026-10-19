@@ -7,32 +7,61 @@ import { useEscapeKey, useModalScrollLock } from '@/hooks';
 export interface ThemeFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (themeData: {
-    name: string;
-    backgroundImage: string;
-    overlayColor: string;
-    overlayOpacity: number;
-    isActive?: boolean;
-    imageFile?: File | null;
-  }) => void;
+  onSave: (formData: FormData) => Promise<void>;
   editingTheme?: ThemeItem | null;
+  initialData?: ThemeItem | null;
 }
 
-const DEFAULT_BG = '/assets/backgroundTheme/default.png';
+function hexToRgba(hex: string, opacity: number): string {
+  let c = hex.replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map((char) => char + char).join('');
+  }
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return `rgba(2, 6, 23, ${opacity})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function parseRgbaOrHex(colorStr?: string): { hex: string; opacityPct: number } {
+  if (!colorStr) return { hex: '#075e54', opacityPct: 35 };
+
+  const rgbaMatch = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/i);
+  if (rgbaMatch) {
+    const r = Math.min(255, parseInt(rgbaMatch[1], 10));
+    const g = Math.min(255, parseInt(rgbaMatch[2], 10));
+    const b = Math.min(255, parseInt(rgbaMatch[3], 10));
+    const a = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1;
+    const hex = '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    return { hex, opacityPct: Math.round(a * 100) };
+  }
+
+  if (colorStr.startsWith('#')) {
+    return { hex: colorStr.slice(0, 7), opacityPct: 35 };
+  }
+
+  return { hex: '#075e54', opacityPct: 35 };
+}
 
 export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
   isOpen,
   onClose,
   onSave,
   editingTheme,
+  initialData,
 }) => {
-  const isEditMode = Boolean(editingTheme);
+  const currentEditing = editingTheme || initialData || null;
+  const isEditMode = Boolean(currentEditing);
 
   const [name, setName] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [overlayColor, setOverlayColor] = useState('#075e54');
   const [overlayOpacityPercent, setOverlayOpacityPercent] = useState<number>(35);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,28 +72,27 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
     if (isOpen) {
       setErrorMessage('');
       setSelectedFile(null);
+      setIsSubmitting(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
 
-      if (editingTheme) {
-        setName(editingTheme.name || '');
-        setBackgroundImage(editingTheme.backgroundImage || '');
-        setOverlayColor(editingTheme.overlayColor || '#075e54');
-        const pct = Math.round(
-          editingTheme.overlayOpacity <= 1
-            ? editingTheme.overlayOpacity * 100
-            : editingTheme.overlayOpacity
-        );
-        setOverlayOpacityPercent(pct);
+      if (currentEditing) {
+        setName(currentEditing.name || '');
+        setBackgroundImage(currentEditing.bgImage || '');
+        const parsed = parseRgbaOrHex(currentEditing.modalOverlayColor);
+        setOverlayColor(parsed.hex);
+        setOverlayOpacityPercent(parsed.opacityPct);
+        setIsActive(Boolean(currentEditing.isActive));
       } else {
         setName('');
         setBackgroundImage('');
         setOverlayColor('#075e54');
         setOverlayOpacityPercent(35);
+        setIsActive(false);
       }
     }
-  }, [isOpen, editingTheme]);
+  }, [isOpen, currentEditing]);
 
   useModalScrollLock(isOpen);
   useEscapeKey(onClose, isOpen);
@@ -84,13 +112,18 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
       return;
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Ukuran gambar maksimal 5MB');
+      return;
+    }
+
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setBackgroundImage(objectUrl);
     setErrorMessage('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -98,23 +131,35 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
       return;
     }
 
-    if (!backgroundImage) {
+    if (!isEditMode && !selectedFile) {
       setErrorMessage('Gambar background wajib diunggah');
       return;
     }
 
-    const decimalOpacity = Number((overlayOpacityPercent / 100).toFixed(2));
-
-    onSave({
-      name: name.trim(),
-      backgroundImage,
+    const calculatedOverlayColor = hexToRgba(
       overlayColor,
-      overlayOpacity: decimalOpacity,
-      isActive: editingTheme ? editingTheme.isActive : false,
-      imageFile: selectedFile,
-    });
+      Number((overlayOpacityPercent / 100).toFixed(2))
+    );
 
-    onClose();
+    const formData = new FormData();
+    formData.append('name', name.trim());
+    formData.append('modalOverlayColor', calculatedOverlayColor);
+    formData.append('isActive', String(isActive));
+    if (selectedFile) {
+      formData.append('bgFile', selectedFile);
+    }
+
+    try {
+      setIsSubmitting(true);
+      setErrorMessage('');
+      await onSave(formData);
+      onClose();
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Gagal menyimpan tema';
+      setErrorMessage(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -187,7 +232,7 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: default, tema-ramadhan, modern-green..."
+              placeholder="Contoh: Modern Green, tema-ramadhan..."
               className="w-full px-4 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-sm font-headline text-[#111b21] placeholder-[#8696a0] focus:outline-none focus:ring-2 focus:ring-[#075e54] focus:border-[#075e54] transition-all"
             />
           </div>
@@ -195,7 +240,7 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
           {/* INPUT 2: UPLOAD BACKGROUND & PREVIEW */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-headline font-bold text-[#111b21] uppercase tracking-wider">
-              Gambar Background <span className="text-red-500">*</span>
+              Gambar Background {!isEditMode && <span className="text-red-500">*</span>}
             </label>
 
             {/* Kotak Preview Background Murni - Hanya tampil jika sudah ada gambar yang diupload atau saat edit */}
@@ -219,7 +264,7 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
                     type="button"
                     onClick={() => {
                       setSelectedFile(null);
-                      setBackgroundImage(isEditMode && editingTheme ? editingTheme.backgroundImage : '');
+                      setBackgroundImage(isEditMode && currentEditing ? currentEditing.bgImage : '');
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                     className="self-start text-[11px] text-red-600 hover:text-red-700 font-headline font-semibold inline-flex items-center gap-1 cursor-pointer"
@@ -235,13 +280,13 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={handleFileChange}
                 className="block w-full text-xs text-[#54656f] file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-headline file:font-bold file:bg-[#075e54] file:text-white hover:file:bg-[#064e46] file:cursor-pointer cursor-pointer border border-[#d8e0e5] rounded-xl p-1.5 bg-[#f0f2f5]/50 focus:outline-none focus:ring-2 focus:ring-[#075e54]"
               />
             </div>
             <p className="text-[11px] text-[#64748b]">
-              Gunakan gambar beresolusi tinggi (disarankan 1440x1024 atau 1920x1080) berformat PNG, JPG, atau WEBP.
+              Gunakan gambar beresolusi tinggi (disarankan 1440x1024 atau 1920x1080) berformat PNG, JPG, atau WEBP. Maksimal 5MB.
             </p>
           </div>
 
@@ -306,9 +351,23 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
                 }}
               />
               <span className="text-[11px] text-[#64748b]">
-                Warna ini akan menjadi filter gelap transparan di belakang popup modal saat aplikasi diklik oleh pengunjung.
+                Warna ini akan menjadi filter transparan di belakang popup modal saat aplikasi diklik oleh pengunjung.
               </span>
             </div>
+          </div>
+
+          {/* INPUT 4: STATUS AKTIF CHECKBOX */}
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0]">
+            <input
+              id="themeIsActiveCheckbox"
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="w-4 h-4 text-[#075e54] rounded focus:ring-[#075e54] border-gray-300 cursor-pointer"
+            />
+            <label htmlFor="themeIsActiveCheckbox" className="text-xs font-headline font-semibold text-[#111b21] cursor-pointer select-none">
+              Jadikan sebagai tema aktif utama pada portal
+            </label>
           </div>
 
           {/* FOOTER MODAL */}
@@ -316,18 +375,32 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-xs font-headline font-bold text-[#54656f] hover:bg-[#f0f2f5] hover:text-[#111b21] transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-xs font-headline font-bold text-[#54656f] hover:bg-[#f0f2f5] hover:text-[#111b21] transition-colors cursor-pointer disabled:opacity-50"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] active:bg-[#053e37] text-white font-headline text-xs font-bold shadow-sm transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] active:bg-[#053e37] text-white font-headline text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>{isEditMode ? 'Perbarui Tema' : 'Simpan Tema'}</span>
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{isEditMode ? 'Perbarui Tema' : 'Simpan Tema'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

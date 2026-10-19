@@ -1,26 +1,18 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ThemeItem } from '@/types';
 import { ThemeFormModal } from '@/components/modal/ThemeFormModal';
 
-const PAGE_SIZE = 6;
-
-const INITIAL_THEMES: ThemeItem[] = [
-  {
-    id: 1,
-    name: 'default',
-    backgroundImage: '/assets/backgroundTheme/default.png',
-    overlayColor: '#075e54',
-    overlayOpacity: 0.35,
-    isActive: true,
-  },
-];
+const ITEMS_PER_PAGE = 5;
 
 export default function AdminTemaPage() {
-  const [themes, setThemes] = useState<ThemeItem[]>(INITIAL_THEMES);
+  const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,23 +20,58 @@ export default function AdminTemaPage() {
 
   // Delete Confirmation State
   const [themeToDelete, setThemeToDelete] = useState<ThemeItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filtered Themes based on search query
-  const filteredThemes = useMemo(() => {
-    if (!searchQuery.trim()) return themes;
-    const query = searchQuery.toLowerCase().trim();
-    return themes.filter((theme) => theme.name.toLowerCase().includes(query));
-  }, [themes, searchQuery]);
+  // Notification / Alert Message
+  const [alertMessage, setAlertMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
-  // Pagination calculation
-  const totalPages = Math.max(1, Math.ceil(filteredThemes.length / PAGE_SIZE));
-  const startIndex = (currentPage - 1) * PAGE_SIZE + 1;
-  const endIndex = Math.min(currentPage * PAGE_SIZE, filteredThemes.length);
+  const showAlert = (type: 'success' | 'error', text: string) => {
+    setAlertMessage({ type, text });
+    setTimeout(() => {
+      setAlertMessage((prev) => (prev?.text === text ? null : prev));
+    }, 4000);
+  };
 
-  const paginatedThemes = useMemo(() => {
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    return filteredThemes.slice(startIdx, startIdx + PAGE_SIZE);
-  }, [filteredThemes, currentPage]);
+  const fetchThemes = useCallback(async (page: number, search: string) => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(ITEMS_PER_PAGE),
+        search: search.trim(),
+      });
+
+      const res = await fetch(`/api/admin/themes?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error('Gagal memuat data tema');
+      }
+
+      const data = await res.json();
+      setThemes(data.themes || []);
+      if (data.pagination) {
+        setTotalPages(data.pagination.totalPages || 1);
+        setTotalItems(data.pagination.total || 0);
+        setCurrentPage(data.pagination.page || 1);
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Gagal memuat data tema';
+      showAlert('error', errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Fetch when page or search changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchThemes(currentPage, searchQuery);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [fetchThemes, currentPage, searchQuery]);
 
   // Handlers
   const handleOpenAdd = () => {
@@ -53,69 +80,136 @@ export default function AdminTemaPage() {
   };
 
   const handleOpenEdit = (theme: ThemeItem) => {
+    if (theme.isDefault) {
+      showAlert('error', 'Tema default sistem tidak dapat diubah.');
+      return;
+    }
     setEditingTheme(theme);
     setIsModalOpen(true);
   };
 
-  const handleSaveTheme = (themeData: {
-    name: string;
-    backgroundImage: string;
-    overlayColor: string;
-    overlayOpacity: number;
-    isActive?: boolean;
-    imageFile?: File | null;
-  }) => {
-    if (editingTheme) {
-      // Mode Edit
-      setThemes((prev) =>
-        prev.map((item) =>
-          item.id === editingTheme.id
-            ? {
-                ...item,
-                name: themeData.name,
-                backgroundImage: themeData.backgroundImage,
-                overlayColor: themeData.overlayColor,
-                overlayOpacity: themeData.overlayOpacity,
-              }
-            : item
-        )
+  const handleSaveTheme = async (formData: FormData) => {
+    const isEdit = Boolean(editingTheme);
+    const url = isEdit
+      ? `/api/admin/themes/${editingTheme!.id}`
+      : '/api/admin/themes';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      body: formData,
+    });
+
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.error || 'Gagal menyimpan tema');
+    }
+
+    showAlert(
+      'success',
+      isEdit ? 'Tema berhasil diperbarui!' : 'Tema baru berhasil ditambahkan!'
+    );
+    await fetchThemes(currentPage, searchQuery);
+  };
+
+  const handleToggleActive = async (theme: ThemeItem) => {
+    if (theme.isDefault && theme.isActive) {
+      showAlert(
+        'error',
+        'Tema default sedang aktif. Aktifkan tema lain untuk menggantikannya.'
       );
-    } else {
-      // Mode Tambah
-      const newId = themes.length > 0 ? Math.max(...themes.map((t) => t.id)) + 1 : 1;
-      const newTheme: ThemeItem = {
-        id: newId,
-        name: themeData.name,
-        backgroundImage: themeData.backgroundImage,
-        overlayColor: themeData.overlayColor,
-        overlayOpacity: themeData.overlayOpacity,
-        isActive: false,
-      };
-      setThemes((prev) => [newTheme, ...prev]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/themes/${theme.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !theme.isActive }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || 'Gagal mengubah status tema');
+      }
+
+      showAlert(
+        'success',
+        !theme.isActive
+          ? `Tema "${theme.name}" sekarang aktif!`
+          : `Tema "${theme.name}" dinonaktifkan. Tema Default otomatis aktif.`
+      );
+      await fetchThemes(currentPage, searchQuery);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Gagal mengubah status tema';
+      showAlert('error', errorMsg);
     }
   };
 
-  const handleToggleActive = (id: number) => {
-    setThemes((prev) =>
-      prev.map((theme) => {
-        if (theme.id === id) {
-          // Jadikan aktif dan jika sudah aktif, biarkan atau toggle
-          return { ...theme, isActive: !theme.isActive };
-        }
-        // Aturan tema: jika satu tema diaktifkan, tema lain dinonaktifkan
-        return { ...theme, isActive: false };
-      })
-    );
+  const handleDeleteConfirm = async () => {
+    if (!themeToDelete) return;
+    if (themeToDelete.isDefault) {
+      showAlert('error', 'Tema default sistem tidak dapat dihapus.');
+      setThemeToDelete(null);
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/admin/themes/${themeToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || 'Gagal menghapus tema');
+      }
+
+      showAlert('success', 'Tema berhasil dihapus!');
+      setThemeToDelete(null);
+
+      // Handle page decrement if last item on page deleted
+      if (themes.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      } else {
+        await fetchThemes(currentPage, searchQuery);
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Gagal menghapus tema';
+      showAlert('error', errorMsg);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleDeleteConfirm = () => {
-    if (!themeToDelete) return;
-    setThemes((prev) => prev.filter((item) => item.id !== themeToDelete.id));
-    setThemeToDelete(null);
-  };
+  const startIndex = totalItems > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
 
   return (
     <div className="flex-1 p-5 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto flex flex-col gap-6">
+      {/* ALERT NOTIFICATION */}
+      {alertMessage && (
+        <div
+          className={`p-4 rounded-2xl text-xs sm:text-sm font-headline font-semibold flex items-center justify-between shadow-sm transition-all animate-scale-up ${
+            alertMessage.type === 'success'
+              ? 'bg-[#e6f7ef] border border-[#bce8d4] text-[#075e54]'
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span>{alertMessage.type === 'success' ? '✅' : '⚠️'}</span>
+            <span>{alertMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAlertMessage(null)}
+            className="text-xs font-bold opacity-70 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 1. HEADER BAGIAN ATAS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#e1e7eb]">
         <div>
@@ -172,7 +266,10 @@ export default function AdminTemaPage() {
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
               className="absolute right-3 text-xs text-[#8696a0] hover:text-[#111b21]"
             >
               ✕
@@ -181,7 +278,7 @@ export default function AdminTemaPage() {
         </div>
 
         <div className="text-xs text-[#54656f] font-headline font-semibold self-center sm:self-auto">
-          Total: <span className="font-bold text-[#075e54]">{themes.length}</span> tema terdaftar
+          Total: <span className="font-bold text-[#075e54]">{totalItems}</span> tema terdaftar
         </div>
       </div>
 
@@ -198,7 +295,16 @@ export default function AdminTemaPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e9edf0] text-sm">
-              {paginatedThemes.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center text-[#54656f]">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#075e54]" />
+                      <p className="font-headline font-semibold text-sm">Memuat data tema...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : themes.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-12 text-center text-[#54656f]">
                     <div className="flex flex-col items-center justify-center gap-2">
@@ -211,10 +317,7 @@ export default function AdminTemaPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedThemes.map((theme) => {
-                  const opacityPercent = Math.round(
-                    theme.overlayOpacity <= 1 ? theme.overlayOpacity * 100 : theme.overlayOpacity
-                  );
+                themes.map((theme) => {
                   return (
                     <tr
                       key={theme.id}
@@ -225,7 +328,7 @@ export default function AdminTemaPage() {
                         <div className="relative w-28 h-16 rounded-xl overflow-hidden border border-[#d8e0e5] shadow-sm bg-[#f8fafc] flex items-center justify-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={theme.backgroundImage}
+                            src={theme.bgImage}
                             alt={theme.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
@@ -233,10 +336,9 @@ export default function AdminTemaPage() {
                           <div
                             className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full border border-white/80 shadow-xs"
                             style={{
-                              backgroundColor: theme.overlayColor,
-                              opacity: theme.overlayOpacity,
+                              backgroundColor: theme.modalOverlayColor,
                             }}
-                            title={`Warna Overlay: ${theme.overlayColor} (${opacityPercent}%)`}
+                            title={`Warna Overlay: ${theme.modalOverlayColor}`}
                           />
                         </div>
                       </td>
@@ -244,19 +346,23 @@ export default function AdminTemaPage() {
                       {/* Kolom 2: Nama & Detail Overlay */}
                       <td className="py-4 px-6">
                         <div className="flex flex-col gap-1">
-                          <span className="font-headline font-bold text-base text-[#111b21]">
-                            {theme.name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-headline font-bold text-base text-[#111b21]">
+                              {theme.name}
+                            </span>
+                            {theme.isDefault && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-headline font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
+                                Default
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-[#54656f]">
                             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold bg-[#f0f2f5] px-2 py-0.5 rounded-md">
                               <span
                                 className="w-2.5 h-2.5 rounded-full inline-block border border-slate-300"
-                                style={{ backgroundColor: theme.overlayColor }}
+                                style={{ backgroundColor: theme.modalOverlayColor }}
                               />
-                              {theme.overlayColor}
-                            </span>
-                            <span className="text-[11px] font-headline text-[#8696a0]">
-                              Opacity: <strong className="text-[#111b21]">{opacityPercent}%</strong>
+                              {theme.modalOverlayColor}
                             </span>
                           </div>
                         </div>
@@ -277,19 +383,26 @@ export default function AdminTemaPage() {
                         )}
                       </td>
 
-                      {/* Kolom 3: Aksi (3 Tombol: Aktifkan/Nonaktifkan, Edit, Hapus) */}
+                      {/* Kolom 3: Aksi */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* Tombol 1: Aktifkan / Nonaktifkan */}
                           <button
                             type="button"
-                            onClick={() => handleToggleActive(theme.id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-headline font-bold border transition-colors flex items-center gap-1 cursor-pointer ${
+                            onClick={() => handleToggleActive(theme)}
+                            disabled={theme.isDefault && theme.isActive}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-headline font-bold border transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                               theme.isActive
                                 ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
                                 : 'bg-[#e6f7ef] hover:bg-[#cbf0dd] text-[#075e54] border-[#bce8d4]'
                             }`}
-                            title={theme.isActive ? 'Nonaktifkan tema ini' : 'Gunakan dan aktifkan tema ini'}
+                            title={
+                              theme.isDefault && theme.isActive
+                                ? 'Tema default otomatis aktif saat tidak ada tema kustom yang aktif'
+                                : theme.isActive
+                                ? 'Nonaktifkan tema ini'
+                                : 'Gunakan dan aktifkan tema ini'
+                            }
                           >
                             {theme.isActive ? (
                               <>
@@ -308,41 +421,52 @@ export default function AdminTemaPage() {
                             )}
                           </button>
 
-                          {/* Tombol 2: Edit */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(theme)}
-                            className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#f0f2f5] text-[#54656f] hover:text-[#075e54] text-xs font-headline font-bold border border-[#d8e0e5] transition-colors flex items-center gap-1.5 cursor-pointer"
-                            title="Edit Tema"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                            <span>Edit</span>
-                          </button>
+                          {/* Tombol 2: Edit (Disembunyikan/Disable jika isDefault) */}
+                          {theme.isDefault ? (
+                            <span
+                              className="px-3 py-1.5 rounded-xl bg-gray-50 text-gray-400 text-xs font-headline font-semibold border border-gray-200 cursor-not-allowed select-none"
+                              title="Tema default tidak dapat diedit"
+                            >
+                              Terkunci
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(theme)}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#f0f2f5] text-[#54656f] hover:text-[#075e54] text-xs font-headline font-bold border border-[#d8e0e5] transition-colors flex items-center gap-1.5 cursor-pointer"
+                              title="Edit Tema"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                              <span>Edit</span>
+                            </button>
+                          )}
 
-                          {/* Tombol 3: Hapus */}
-                          <button
-                            type="button"
-                            onClick={() => setThemeToDelete(theme)}
-                            className="px-3 py-1.5 rounded-xl bg-[#fee2e2]/60 hover:bg-[#fee2e2] text-[#991b1b] text-xs font-headline font-bold border border-[#fca5a5]/40 transition-colors flex items-center gap-1.5 cursor-pointer"
-                            title="Hapus Tema"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            <span>Hapus</span>
-                          </button>
+                          {/* Tombol 3: Hapus (Disembunyikan/Disable jika isDefault) */}
+                          {!theme.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => setThemeToDelete(theme)}
+                              className="px-3 py-1.5 rounded-xl bg-[#fee2e2]/60 hover:bg-[#fee2e2] text-[#991b1b] text-xs font-headline font-bold border border-[#fca5a5]/40 transition-colors flex items-center gap-1.5 cursor-pointer"
+                              title="Hapus Tema"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              <span>Hapus</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -353,14 +477,14 @@ export default function AdminTemaPage() {
           </table>
         </div>
 
-        {/* 4. PAGINATION */}
-        {filteredThemes.length > 0 && (
+        {/* 4. SERVER PAGINATION CONTROLS */}
+        {!isLoading && totalItems > 0 && (
           <div className="p-4 sm:p-5 border-t border-[#e9edf0] bg-[#fbfcfc] flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Info Halaman */}
             <span className="text-xs sm:text-sm text-[#54656f]">
               Menampilkan <span className="font-bold text-[#111b21]">{startIndex}</span>–
               <span className="font-bold text-[#111b21]">{endIndex}</span> dari{' '}
-              <span className="font-bold text-[#075e54]">{filteredThemes.length}</span> tema
+              <span className="font-bold text-[#075e54]">{totalItems}</span> tema
             </span>
 
             {/* Pagination Controls */}
@@ -370,7 +494,7 @@ export default function AdminTemaPage() {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 &larr; Sebelumnya
               </button>
@@ -384,7 +508,7 @@ export default function AdminTemaPage() {
                     key={pageNum}
                     type="button"
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#075e54] text-white shadow-xs'
                         : 'bg-white border border-[#d8e0e5] text-[#54656f] hover:bg-[#f0f2f5] hover:text-[#075e54]'
@@ -400,7 +524,7 @@ export default function AdminTemaPage() {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 Berikutnya &rarr;
               </button>
@@ -438,7 +562,7 @@ export default function AdminTemaPage() {
               </h3>
               <p className="text-xs text-[#54656f] mt-1">
                 Apakah Anda yakin ingin menghapus tema{' '}
-                <strong className="text-[#111b21]">"{themeToDelete.name}"</strong>?
+                <strong className="text-[#111b21]">"{themeToDelete.name}"</strong>? File gambar terkait juga akan dihapus dari server.
               </p>
             </div>
 
@@ -446,16 +570,18 @@ export default function AdminTemaPage() {
               <button
                 type="button"
                 onClick={() => setThemeToDelete(null)}
-                className="flex-1 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-xs font-headline font-bold text-[#54656f] hover:bg-[#f0f2f5] transition-colors cursor-pointer"
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-xs font-headline font-bold text-[#54656f] hover:bg-[#f0f2f5] transition-colors cursor-pointer disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleDeleteConfirm}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-headline font-bold transition-all shadow-sm cursor-pointer"
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-headline font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
-                Ya, Hapus
+                {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
             </div>
           </div>

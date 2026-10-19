@@ -26,6 +26,7 @@ export interface UnifiedEcosystemModalProps {
   apps?: EcosystemAppItem[];
   onSwitchCategory: (category: CategoryType) => void;
   onClose: () => void;
+  overlayColor?: string;
 }
 
 export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
@@ -34,6 +35,7 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
   apps,
   onSwitchCategory,
   onClose,
+  overlayColor,
 }) => {
   const modalCardRef = useRef<HTMLDivElement>(null);
   const [hoveredApp, setHoveredApp] = useState<EcosystemAppItem | null>(null);
@@ -82,9 +84,12 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
       <div
         id="modalBackdrop"
         aria-hidden="true"
-        className={`fixed inset-0 z-40 bg-[#075e54]/35 backdrop-blur-[8px] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 backdrop-blur-[8px] transition-all duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          backgroundColor: overlayColor || 'rgba(7, 94, 84, 0.35)',
+        }}
       />
 
       {/* Modal Dialog Container - Always Centered with Horizontal Overflow Protection */}

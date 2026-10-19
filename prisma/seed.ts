@@ -81,21 +81,28 @@ async function main() {
 
   // 4. Seed data awal untuk Pengaturan Tema (Theme)
   const defaultThemeData = {
-    name: 'default',
-    backgroundImage: '/assets/backgroundTheme/default.png',
-    overlayColor: '#075e54',
-    overlayOpacity: 0.35,
+    name: 'Default GreenNusa',
+    bgImage: '/assets/backgroundTheme/default.png',
+    modalOverlayColor: 'rgba(7, 94, 84, 0.35)',
     isActive: true,
+    isDefault: true,
   };
 
-  const defaultTheme = await prisma.theme.upsert({
-    where: { id: 1 },
-    update: defaultThemeData,
-    create: {
-      id: 1,
-      ...defaultThemeData,
-    },
+  const existingDefault = await prisma.theme.findFirst({
+    where: { isDefault: true },
   });
+
+  let defaultTheme;
+  if (existingDefault) {
+    defaultTheme = await prisma.theme.update({
+      where: { id: existingDefault.id },
+      data: defaultThemeData,
+    });
+  } else {
+    defaultTheme = await prisma.theme.create({
+      data: defaultThemeData,
+    });
+  }
 
   console.log(`🎨 Seeded Theme: ID ${defaultTheme.id} (${defaultTheme.name}, active: ${defaultTheme.isActive})`);
 

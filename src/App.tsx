@@ -18,8 +18,29 @@ export const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryType>('pemerintahan');
   const [apps, setApps] = useState<EcosystemAppItem[]>([]);
   const [portalContent, setPortalContent] = useState<PortalContentData | null>(null);
+  const [activeTheme, setActiveTheme] = useState<{
+    bgImage: string;
+    modalOverlayColor: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isContentLoading, setIsContentLoading] = useState<boolean>(true);
+
+  const fetchActiveTheme = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/themes/active?t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.theme) {
+          setActiveTheme({
+            bgImage: json.theme.bgImage,
+            modalOverlayColor: json.theme.modalOverlayColor,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Gagal memuat tema aktif:', e);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -44,6 +65,8 @@ export const App: React.FC = () => {
             setPortalContent(contentJson.data);
           }
         }
+
+        await fetchActiveTheme();
       } catch (error) {
         console.error('Gagal mengambil data portal:', error);
       } finally {
@@ -55,10 +78,20 @@ export const App: React.FC = () => {
     }
 
     fetchData();
+
+    // Re-fetch tema secara otomatis saat jendela/tab kembali aktif
+    const handleFocus = () => {
+      fetchActiveTheme();
+    };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleFocus);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleFocus);
     };
-  }, []);
+  }, [fetchActiveTheme]);
 
   const handleOpenModal = useCallback((category: CategoryType) => {
     setActiveCategory(category);
@@ -91,9 +124,11 @@ export const App: React.FC = () => {
   useEscapeKey(handleCloseModal, isModalOpen);
 
   return (
-    <div className="text-[#111b21] antialiased min-h-screen flex flex-col font-body selection:bg-[#e9edf0] selection:text-[#25d366] relative overflow-x-hidden">
-      {/* Dynamic Abstract Particles & Glowing Brand Blobs Background with Fixed Theme default.png */}
-      <AbstractParticleBackground backgroundImage="/assets/backgroundTheme/default.png" />
+    <div className="text-[#111b21] antialiased min-h-screen flex flex-col justify-between font-body selection:bg-[#e9edf0] selection:text-[#25d366] relative overflow-x-hidden">
+      {/* Dynamic Background Image dari Tema Aktif */}
+      <AbstractParticleBackground
+        backgroundImage={activeTheme?.bgImage || '/assets/backgroundTheme/default.png'}
+      />
 
       {/* Main Canvas */}
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-start">
@@ -132,13 +167,14 @@ export const App: React.FC = () => {
       {/* Corporate Footer */}
       <CorporateFooter paragraphText={portalContent?.paragraphText} />
 
-      {/* Unified Open Modal Component */}
+      {/* Unified Open Modal Component with Active Theme Overlay Color */}
       <UnifiedEcosystemModal
         isOpen={isModalOpen}
         activeCategory={activeCategory}
         apps={apps.length > 0 ? apps : undefined}
         onSwitchCategory={handleSwitchCategory}
         onClose={handleCloseModal}
+        overlayColor={activeTheme?.modalOverlayColor}
       />
 
       {/* Floating WhatsApp Action Button */}

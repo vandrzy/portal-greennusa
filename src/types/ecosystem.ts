@@ -10,12 +10,14 @@ export interface EcosystemAppItem {
 }
 
 export interface ThemeItem {
-  id: number;
+  id: string;
   name: string;
-  backgroundImage: string;
-  overlayColor: string;
-  overlayOpacity: number;
+  bgImage: string;
+  modalOverlayColor: string;
   isActive: boolean;
+  isDefault: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface PortalContentData {

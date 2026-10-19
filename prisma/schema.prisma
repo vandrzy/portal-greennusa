@@ -63,15 +63,14 @@ model PortalContent {
 }
 
 model Theme {
-  id              Int      @id @default(autoincrement())
-  name            String   @map("name")
-  backgroundImage String   @map("background_image")
-  overlayColor    String   @map("overlay_color")
-  overlayOpacity  Float    @map("overlay_opacity")
-  isActive        Boolean  @default(false) @map("is_active")
-
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid())
+  name              String   @db.VarChar(150)
+  bgImage           String   @map("bg_image") @db.VarChar(255)
+  modalOverlayColor String   @map("modal_overlay_color") @db.VarChar(100)
+  isActive          Boolean  @default(false) @map("is_active")
+  isDefault         Boolean  @default(false) @map("is_default")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("themes")
 }

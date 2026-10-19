@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 
 export const AUTH_COOKIE_NAME = 'auth_token';
 
@@ -36,4 +37,20 @@ export async function getAuthSessionFromRequest(request: {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   if (!token) return null;
   return verifyAuthToken(token);
+}
+
+export async function verifySession(request?: {
+  cookies: { get: (name: string) => { value: string } | undefined };
+}): Promise<TokenPayload | null> {
+  if (request) {
+    return getAuthSessionFromRequest(request);
+  }
+  try {
+    const cookieStore = cookies();
+    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+    if (!token) return null;
+    return verifyAuthToken(token);
+  } catch {
+    return null;
+  }
 }
