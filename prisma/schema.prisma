@@ -62,3 +62,18 @@ model PortalContent {
   @@map("portal_contents")
 }
 
+model Theme {
+  id              Int      @id @default(autoincrement())
+  name            String   @map("name")
+  backgroundImage String   @map("background_image")
+  overlayColor    String   @map("overlay_color")
+  overlayOpacity  Float    @map("overlay_opacity")
+  isActive        Boolean  @default(false) @map("is_active")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("themes")
+}
+
+

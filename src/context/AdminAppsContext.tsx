@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { EcosystemAppItem, CategoryType } from '@/types';
 
@@ -14,13 +14,29 @@ export interface AppPayload {
   iconFile?: File | null;
 }
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface FetchAppsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: 'all' | CategoryType | string;
+}
+
 interface AdminAppsContextType {
   apps: EcosystemAppItem[];
+  pagination: PaginationMeta;
   isLoading: boolean;
   pemerintahanCount: number;
   swastaCount: number;
   totalCount: number;
   refreshData: () => Promise<void>;
+  fetchApps: (params?: FetchAppsParams) => Promise<void>;
   addApp: (
     payload: AppPayload | FormData
   ) => Promise<{ success: boolean; message?: string; data?: EcosystemAppItem }>;
@@ -36,32 +52,87 @@ const AdminAppsContext = createContext<AdminAppsContextType | undefined>(undefin
 export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const [apps, setApps] = useState<EcosystemAppItem[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    limit: 6,
+    total: 0,
+    totalPages: 1,
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [pemerintahanCount, setPemerintahanCount] = useState<number>(0);
   const [swastaCount, setSwastaCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  // Fetch apps & dashboard metrics from Backend APIs
-  const refreshData = useCallback(async () => {
-    try {
-      const [appsRes, dashRes] = await Promise.all([
-        fetch('/api/admin/apps', { cache: 'no-store' }),
-        fetch('/api/admin/dashboard', { cache: 'no-store' }),
-      ]);
+  const currentParamsRef = useRef<FetchAppsParams>({
+    page: 1,
+    limit: 6,
+    search: '',
+    category: 'all',
+  });
 
-      // Handle unauthenticated session
-      if (appsRes.status === 401 || dashRes.status === 401) {
+  // Fetch apps with query parameters for backend pagination and filtering
+  const fetchApps = useCallback(
+    async (params?: FetchAppsParams) => {
+      setIsLoading(true);
+      try {
+        const merged: FetchAppsParams = {
+          ...currentParamsRef.current,
+          ...(params || {}),
+        };
+        currentParamsRef.current = merged;
+
+        const query = new URLSearchParams();
+        if (merged.page) query.set('page', merged.page.toString());
+        if (merged.limit) query.set('limit', merged.limit.toString());
+        if (merged.category && merged.category !== 'all') {
+          query.set('category', merged.category);
+        }
+        if (merged.search && merged.search.trim()) {
+          query.set('search', merged.search.trim());
+        }
+
+        const queryString = query.toString();
+        const endpoint = queryString ? `/api/admin/apps?${queryString}` : '/api/admin/apps';
+
+        const res = await fetch(endpoint, { cache: 'no-store' });
+        if (res.status === 401) {
+          router.push('/login');
+          return;
+        }
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setApps(json.data);
+            if (json.pagination) {
+              setPagination(json.pagination);
+            } else {
+              setPagination({
+                page: merged.page || 1,
+                limit: merged.limit || 6,
+                total: json.data.length,
+                totalPages: Math.max(1, Math.ceil(json.data.length / (merged.limit || 6))),
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load admin apps from API:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router]
+  );
+
+  // Fetch dashboard metrics
+  const refreshDashboardMetrics = useCallback(async () => {
+    try {
+      const dashRes = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+      if (dashRes.status === 401) {
         router.push('/login');
         return;
       }
-
-      if (appsRes.ok) {
-        const appsJson = await appsRes.json();
-        if (appsJson.success && Array.isArray(appsJson.data)) {
-          setApps(appsJson.data);
-        }
-      }
-
       if (dashRes.ok) {
         const dashJson = await dashRes.json();
         if (dashJson.success && dashJson.data) {
@@ -71,20 +142,30 @@ export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
     } catch (err) {
-      console.error('Failed to load admin data from API:', err);
+      console.error('Failed to load dashboard metrics from API:', err);
     }
   }, [router]);
 
+  // Refresh both apps list and metrics
+  const refreshData = useCallback(async () => {
+    await Promise.all([
+      fetchApps(currentParamsRef.current),
+      refreshDashboardMetrics(),
+    ]);
+  }, [fetchApps, refreshDashboardMetrics]);
+
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
-    refreshData().finally(() => {
+    Promise.all([
+      fetchApps(currentParamsRef.current),
+      refreshDashboardMetrics(),
+    ]).finally(() => {
       if (isMounted) setIsLoading(false);
     });
     return () => {
       isMounted = false;
     };
-  }, [refreshData]);
+  }, [fetchApps, refreshDashboardMetrics]);
 
   // Helper to format payload into FormData
   const toFormData = (payload: AppPayload | Partial<AppPayload> | FormData): FormData => {
@@ -191,11 +272,13 @@ export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     <AdminAppsContext.Provider
       value={{
         apps,
+        pagination,
         isLoading,
         pemerintahanCount,
         swastaCount,
         totalCount,
         refreshData,
+        fetchApps,
         addApp,
         updateApp,
         deleteApp,

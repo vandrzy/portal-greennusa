@@ -8,3 +8,13 @@ export interface EcosystemAppItem {
   category: CategoryType;
   iconPath: string;
 }
+
+export interface ThemeItem {
+  id: number;
+  name: string;
+  backgroundImage: string;
+  overlayColor: string;
+  overlayOpacity: number;
+  isActive: boolean;
+}
+

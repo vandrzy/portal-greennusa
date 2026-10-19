@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAdminApps } from '@/context/AdminAppsContext';
 import { EcosystemAppItem, CategoryType } from '@/types';
 import { AppFormModal } from '@/components/modal/AppFormModal';
@@ -9,10 +9,22 @@ import { LocalIconImage } from '@/components/common/LocalIconImage';
 const PAGE_SIZE = 6;
 
 export default function AdminAplikasiPage() {
-  const { apps, addApp, updateApp, deleteApp, isLoading } = useAdminApps();
+  const {
+    apps,
+    pagination,
+    addApp,
+    updateApp,
+    deleteApp,
+    fetchApps,
+    isLoading,
+    totalCount,
+    pemerintahanCount,
+    swastaCount,
+  } = useAdminApps();
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<'all' | CategoryType>('all');
 
   // Pagination state
@@ -26,38 +38,47 @@ export default function AdminAplikasiPage() {
   const [appToDelete, setAppToDelete] = useState<EcosystemAppItem | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Filtered Apps based on search query and category
-  const filteredApps = useMemo(() => {
-    return apps.filter((app) => {
-      const matchesCategory =
-        filterCategory === 'all' ? true : app.category === filterCategory;
-      const matchesSearch =
-        searchQuery.trim() === ''
-          ? true
-          : app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            app.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            app.url.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [apps, filterCategory, searchQuery]);
-
-  // Compute pagination
-  const totalPages = Math.max(1, Math.ceil(filteredApps.length / PAGE_SIZE));
-
-  // Auto-retreat to previous page if current page becomes empty after deletion or filter change
+  // Debounce search query input by 300ms
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset to page 1 whenever search query or category filter changes
+  const prevFilterRef = useRef({ debouncedSearch, filterCategory });
+  useEffect(() => {
+    if (
+      prevFilterRef.current.debouncedSearch !== debouncedSearch ||
+      prevFilterRef.current.filterCategory !== filterCategory
+    ) {
+      prevFilterRef.current = { debouncedSearch, filterCategory };
+      setCurrentPage(1);
     }
-  }, [currentPage, totalPages]);
+  }, [debouncedSearch, filterCategory]);
 
-  const paginatedApps = useMemo(() => {
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    return filteredApps.slice(startIdx, startIdx + PAGE_SIZE);
-  }, [filteredApps, currentPage]);
+  // Fetch apps with server-side pagination & filtering
+  useEffect(() => {
+    fetchApps({
+      page: currentPage,
+      limit: PAGE_SIZE,
+      category: filterCategory,
+      search: debouncedSearch,
+    });
+  }, [currentPage, filterCategory, debouncedSearch, fetchApps]);
 
-  const startIndex = (currentPage - 1) * PAGE_SIZE + 1;
-  const endIndex = Math.min(currentPage * PAGE_SIZE, filteredApps.length);
+  // Auto-retreat to previous page if current page exceeds total pages
+  useEffect(() => {
+    if (pagination.totalPages > 0 && currentPage > pagination.totalPages) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [currentPage, pagination.totalPages]);
+
+  const totalPages = pagination.totalPages || 1;
+  const totalItems = pagination.total || 0;
+  const startIndex = totalItems === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const endIndex = Math.min(pagination.page * pagination.limit, totalItems);
 
   // Handlers
   const handleOpenAdd = () => {
@@ -81,7 +102,11 @@ export default function AdminAplikasiPage() {
     if (selectedApp) {
       return await updateApp(selectedApp.id, data);
     } else {
-      return await addApp(data);
+      const res = await addApp(data);
+      if (res.success) {
+        setCurrentPage(1);
+      }
+      return res;
     }
   };
 
@@ -173,13 +198,13 @@ export default function AdminAplikasiPage() {
               setFilterCategory('all');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
               filterCategory === 'all'
                 ? 'bg-white text-[#075e54] font-bold shadow-sm'
                 : 'text-[#54656f] hover:text-[#075e54]'
             }`}
           >
-            Semua ({apps.length})
+            Semua ({totalCount})
           </button>
           <button
             type="button"
@@ -187,13 +212,13 @@ export default function AdminAplikasiPage() {
               setFilterCategory('pemerintahan');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
               filterCategory === 'pemerintahan'
                 ? 'bg-[#075e54] text-white font-bold shadow-sm'
                 : 'text-[#54656f] hover:text-[#075e54]'
             }`}
           >
-            Pemerintahan
+            Pemerintahan ({pemerintahanCount})
           </button>
           <button
             type="button"
@@ -201,13 +226,13 @@ export default function AdminAplikasiPage() {
               setFilterCategory('swasta');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
               filterCategory === 'swasta'
                 ? 'bg-[#128c7e] text-white font-bold shadow-sm'
                 : 'text-[#54656f] hover:text-[#075e54]'
             }`}
           >
-            Swasta
+            Swasta ({swastaCount})
           </button>
         </div>
       </div>
@@ -242,7 +267,7 @@ export default function AdminAplikasiPage() {
                     </div>
                   </td>
                 </tr>
-              ) : paginatedApps.length === 0 ? (
+              ) : apps.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-16 text-center text-[#54656f]">
                     <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto">
@@ -260,8 +285,9 @@ export default function AdminAplikasiPage() {
                         onClick={() => {
                           setSearchQuery('');
                           setFilterCategory('all');
+                          setCurrentPage(1);
                         }}
-                        className="mt-1 px-4 py-1.5 rounded-xl bg-[#e6f7ef] text-[#075e54] text-xs font-bold font-headline"
+                        className="mt-1 px-4 py-1.5 rounded-xl bg-[#e6f7ef] text-[#075e54] text-xs font-bold font-headline cursor-pointer"
                       >
                         Reset Filter
                       </button>
@@ -269,7 +295,7 @@ export default function AdminAplikasiPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedApps.map((app) => (
+                apps.map((app) => (
                   <tr
                     key={app.id}
                     className="hover:bg-[#fbfcfc] transition-colors group"
@@ -390,13 +416,13 @@ export default function AdminAplikasiPage() {
         </div>
 
         {/* 3. PAGINATION */}
-        {!isLoading && filteredApps.length > 0 && (
+        {!isLoading && totalItems > 0 && (
           <div className="p-4 sm:p-5 border-t border-[#e9edf0] bg-[#fbfcfc] flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Info Halaman */}
             <span className="text-xs sm:text-sm text-[#54656f]">
               Menampilkan <span className="font-bold text-[#111b21]">{startIndex}</span>–
               <span className="font-bold text-[#111b21]">{endIndex}</span> dari{' '}
-              <span className="font-bold text-[#075e54]">{filteredApps.length}</span> aplikasi
+              <span className="font-bold text-[#075e54]">{totalItems}</span> aplikasi
             </span>
 
             {/* Pagination Controls */}
@@ -406,8 +432,8 @@ export default function AdminAplikasiPage() {
                 type="button"
                 id="btnPrevPage"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                disabled={currentPage <= 1 || isLoading}
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 &larr; Sebelumnya
               </button>
@@ -421,7 +447,8 @@ export default function AdminAplikasiPage() {
                     key={pageNum}
                     type="button"
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                    disabled={isLoading}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#075e54] text-white shadow-xs'
                         : 'bg-white border border-[#d8e0e5] text-[#54656f] hover:bg-[#f0f2f5] hover:text-[#075e54]'
@@ -437,8 +464,8 @@ export default function AdminAplikasiPage() {
                 type="button"
                 id="btnNextPage"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                disabled={currentPage >= totalPages || isLoading}
+                className="px-3 py-1.5 rounded-xl bg-white border border-[#d8e0e5] text-[#54656f] hover:text-[#075e54] hover:bg-[#f0f2f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 Selanjutnya &rarr;
               </button>

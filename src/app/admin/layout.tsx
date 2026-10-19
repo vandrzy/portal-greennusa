@@ -57,6 +57,20 @@ export default function AdminLayout({
       ),
     },
     {
+      label: 'Pengaturan Tema',
+      href: '/admin/tema',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M7 21a4 4 0 01-4-4 4 4 0 014-4c.7 0 1.37.18 1.95.5.34-.67.87-1.22 1.55-1.55A3.987 3.987 0 0113 11a4 4 0 014 4 4 4 0 01-4 4H7zM18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+          />
+        </svg>
+      ),
+    },
+    {
       label: 'Manajemen Aplikasi',
       href: '/admin/aplikasi',
       icon: (

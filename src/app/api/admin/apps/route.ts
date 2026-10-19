@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthSessionFromRequest } from '@/lib/auth';
 import { saveIconFile, deleteOldIconFile, INVALID_IMAGE_ERROR_MESSAGE } from '@/lib/iconStorage';
-import { AppCategory } from '@prisma/client';
+import { AppCategory, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,14 +20,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const categoryParam = searchParams.get('category');
     const searchParam = searchParams.get('search');
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
 
-    const whereClause: {
-      category?: AppCategory;
-      OR?: Array<{
-        title?: { contains: string };
-        description?: { contains: string };
-      }>;
-    } = {};
+    const whereClause: Prisma.AppWhereInput = {};
 
     if (categoryParam === 'pemerintahan' || categoryParam === 'swasta') {
       whereClause.category = categoryParam as AppCategory;
@@ -38,15 +34,30 @@ export async function GET(request: NextRequest) {
       whereClause.OR = [
         { title: { contains: query } },
         { description: { contains: query } },
+        { url: { contains: query } },
       ];
     }
 
-    const apps = await prisma.app.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    // Server-side pagination
+    const isPaginated = pageParam !== null || limitParam !== null;
+    const page = Math.max(1, parseInt(pageParam || '1', 10) || 1);
+    const limit = isPaginated ? Math.max(1, parseInt(limitParam || '6', 10) || 6) : undefined;
+    const skip = isPaginated && limit ? (page - 1) * limit : undefined;
+
+    const [total, apps] = await prisma.$transaction([
+      prisma.app.count({ where: whereClause }),
+      prisma.app.findMany({
+        where: whereClause,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(limit !== undefined ? { take: limit } : {}),
+      }),
+    ]);
+
+    const effectiveLimit = limit || total || 1;
+    const totalPages = Math.max(1, Math.ceil(total / effectiveLimit));
 
     const formattedApps = apps.map((app) => ({
       id: app.id,
@@ -66,6 +77,12 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         data: formattedApps,
+        pagination: {
+          page,
+          limit: limit || total,
+          total,
+          totalPages,
+        },
       },
       { status: 200 }
     );

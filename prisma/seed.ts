@@ -79,6 +79,26 @@ async function main() {
 
   console.log(`📑 Seeded PortalContent: ID ${portalContent.id} (${portalContent.headerText})`);
 
+  // 4. Seed data awal untuk Pengaturan Tema (Theme)
+  const defaultThemeData = {
+    name: 'default',
+    backgroundImage: '/assets/backgroundTheme/default.png',
+    overlayColor: '#075e54',
+    overlayOpacity: 0.35,
+    isActive: true,
+  };
+
+  const defaultTheme = await prisma.theme.upsert({
+    where: { id: 1 },
+    update: defaultThemeData,
+    create: {
+      id: 1,
+      ...defaultThemeData,
+    },
+  });
+
+  console.log(`🎨 Seeded Theme: ID ${defaultTheme.id} (${defaultTheme.name}, active: ${defaultTheme.isActive})`);
+
   console.log(`🎉 Seeding selesai! Total aplikasi: ${appsToSeed.length}`);
 }
 
