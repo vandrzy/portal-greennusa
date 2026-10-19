@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { CategoryType, EcosystemAppItem } from './types';
+import { CategoryType, EcosystemAppItem, PortalContentData } from './types';
 import { PEMERINTAHAN_APPS, SWASTA_APPS } from './data';
 import { useModalScrollLock, useEscapeKey } from './hooks';
 import {
@@ -17,28 +17,44 @@ export const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('pemerintahan');
   const [apps, setApps] = useState<EcosystemAppItem[]>([]);
+  const [portalContent, setPortalContent] = useState<PortalContentData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isContentLoading, setIsContentLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchApps() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/apps');
-        const result = await response.json();
-        if (isMounted && result.success && Array.isArray(result.data)) {
-          setApps(result.data);
+        const [appsRes, contentRes] = await Promise.all([
+          fetch('/api/apps', { cache: 'no-store' }),
+          fetch('/api/kontenportal', { cache: 'no-store' }),
+        ]);
+
+        if (appsRes.ok) {
+          const appsJson = await appsRes.json();
+          if (isMounted && appsJson.success && Array.isArray(appsJson.data)) {
+            setApps(appsJson.data);
+          }
+        }
+
+        if (contentRes.ok) {
+          const contentJson = await contentRes.json();
+          if (isMounted && contentJson.success && contentJson.data) {
+            setPortalContent(contentJson.data);
+          }
         }
       } catch (error) {
-        console.error('Gagal mengambil data aplikasi:', error);
+        console.error('Gagal mengambil data portal:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsContentLoading(false);
         }
       }
     }
 
-    fetchApps();
+    fetchData();
     return () => {
       isMounted = false;
     };
@@ -82,7 +98,10 @@ export const App: React.FC = () => {
       {/* Main Canvas */}
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 flex flex-col justify-start">
         {/* Hero Section */}
-        <HeroHeader />
+        <HeroHeader
+          logoUrl={portalContent?.logoUrl}
+          headerText={portalContent?.headerText}
+        />
 
         {/* Folder Playground */}
         <section className="relative w-full flex flex-col items-center pt-28 sm:pt-36 pb-12 overflow-visible">
@@ -90,7 +109,8 @@ export const App: React.FC = () => {
             {/* FOLDER 1: INTERAKTIF (Kategori: Pemerintahan) */}
             <EcosystemFolderCard
               category="pemerintahan"
-              title="Pemerintahan"
+              title={portalContent?.folder1Title || 'Pemerintahan'}
+              subtitle={portalContent?.folder1Subtitle}
               ariaLabel="Buka Ekosistem Aplikasi Pemerintahan"
               apps={pemerintahanApps}
               onOpenModal={handleOpenModal}
@@ -99,7 +119,8 @@ export const App: React.FC = () => {
             {/* FOLDER 2: INTERAKTIF (Kategori: Swasta) */}
             <EcosystemFolderCard
               category="swasta"
-              title="Swasta"
+              title={portalContent?.folder2Title || 'Swasta'}
+              subtitle={portalContent?.folder2Subtitle}
               ariaLabel="Buka Ekosistem Aplikasi Swasta"
               apps={swastaApps}
               onOpenModal={handleOpenModal}
@@ -109,7 +130,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Corporate Footer */}
-      <CorporateFooter />
+      <CorporateFooter paragraphText={portalContent?.paragraphText} />
 
       {/* Unified Open Modal Component */}
       <UnifiedEcosystemModal
@@ -121,7 +142,7 @@ export const App: React.FC = () => {
       />
 
       {/* Floating WhatsApp Action Button */}
-      <WhatsAppFloatingButton />
+      <WhatsAppFloatingButton whatsappLink={portalContent?.whatsappLink} />
     </div>
   );
 };

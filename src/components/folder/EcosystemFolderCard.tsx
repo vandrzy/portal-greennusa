@@ -7,6 +7,7 @@ import { LocalIconImage } from '../common/LocalIconImage';
 export interface EcosystemFolderCardProps {
   category: CategoryType;
   title: string;
+  subtitle?: string;
   ariaLabel: string;
   apps?: EcosystemAppItem[];
   onOpenModal: (category: CategoryType) => void;
@@ -91,6 +92,7 @@ const DEFAULT_FOREGROUND_STACK = [
 export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
   category,
   title,
+  subtitle,
   ariaLabel,
   apps = [],
   onOpenModal,
@@ -238,7 +240,7 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
           <div className="flex-1 flex flex-col justify-end pb-2">
             <div>
               <p className="font-headline text-[13px] tracking-widest font-bold text-white/85 uppercase mb-1">
-                EKOSISTEM APLIKASI
+                {subtitle || 'EKOSISTEM APLIKASI'}
               </p>
               <h3 className="font-headline text-[34px] font-extrabold text-white leading-tight tracking-tight">
                 {title}

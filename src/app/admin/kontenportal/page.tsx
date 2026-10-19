@@ -1,36 +1,84 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminKontenPortalPage() {
-  // Default values based on current portal configuration
-  const defaultValues = {
-    logoUrl: '/assets/logo/logo-green.png',
-    headerText: 'Satu Pintu Akses Aplikasi GreenNusa Computindo',
-    paragraphText:
-      'Portal integrasi seluruh layanan digital dan aplikasi ekosistem resmi GreenNusa Computindo guna mendukung efisiensi serta kemudahan akses solusi teknologi bagi instansi pemerintahan dan sektor swasta.',
-    folder1Title: 'Pemerintahan',
-    folder1Subtitle: 'EKOSISTEM APLIKASI',
-    folder2Title: 'Swasta',
-    folder2Subtitle: 'EKOSISTEM APLIKASI',
-    whatsappLink: 'https://wa.me/6281348039947',
-  };
+  const router = useRouter();
 
-  // State Management Lokal (Client Component without backend API)
+  // State Management terhubung ke Backend API (/api/kontenportal)
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [savedLogoUrl, setSavedLogoUrl] = useState<string>('/assets/logo/logo-green.png');
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>(defaultValues.logoUrl);
-  const [headerText, setHeaderText] = useState<string>(defaultValues.headerText);
-  const [paragraphText, setParagraphText] = useState<string>(defaultValues.paragraphText);
-  const [folder1Title, setFolder1Title] = useState<string>(defaultValues.folder1Title);
-  const [folder1Subtitle, setFolder1Subtitle] = useState<string>(defaultValues.folder1Subtitle);
-  const [folder2Title, setFolder2Title] = useState<string>(defaultValues.folder2Title);
-  const [folder2Subtitle, setFolder2Subtitle] = useState<string>(defaultValues.folder2Subtitle);
-  const [whatsappLink, setWhatsappLink] = useState<string>(defaultValues.whatsappLink);
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  const [headerText, setHeaderText] = useState<string>('');
+  const [paragraphText, setParagraphText] = useState<string>('');
+  const [folder1Title, setFolder1Title] = useState<string>('');
+  const [folder1Subtitle, setFolder1Subtitle] = useState<string>('');
+  const [folder2Title, setFolder2Title] = useState<string>('');
+  const [folder2Subtitle, setFolder2Subtitle] = useState<string>('');
+  const [whatsappLink, setWhatsappLink] = useState<string>('');
 
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 1. Fetch data konten portal saat halaman pertama kali dimuat
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPortalContent() {
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const res = await fetch('/api/kontenportal', { cache: 'no-store' });
+        if (res.status === 401) {
+          router.push('/login');
+          return;
+        }
+
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json.success && json.data) {
+            const data = json.data;
+            const activeLogo = data.logoUrl || '/assets/logo/logo-green.png';
+            setSavedLogoUrl(activeLogo);
+            setLogoPreview(activeLogo);
+            setHeaderText(data.headerText || '');
+            setParagraphText(data.paragraphText || '');
+            setFolder1Title(data.folder1Title || '');
+            setFolder1Subtitle(data.folder1Subtitle || '');
+            setFolder2Title(data.folder2Title || '');
+            setFolder2Subtitle(data.folder2Subtitle || '');
+            setWhatsappLink(data.whatsappLink || '');
+          }
+        } else {
+          const json = await res.json().catch(() => null);
+          if (isMounted && json?.message) {
+            setErrorMessage(json.message);
+          }
+        }
+      } catch (err: any) {
+        console.error('Gagal mengambil konten portal dari API:', err);
+        if (isMounted) {
+          setErrorMessage('Gagal menghubungi server untuk memuat data konten portal');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadPortalContent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   // Handle Logo Upload with local preview
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,30 +90,81 @@ export default function AdminKontenPortalPage() {
     }
   };
 
-  // Handle Cancel / Reset Logo
+  // Handle Cancel / Reset Logo back to currently saved logo
   const handleResetLogo = () => {
     setLogoFile(null);
-    setLogoPreview(defaultValues.logoUrl);
+    setLogoPreview(savedLogoUrl);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Handle Form Submit (Simulasi Simpan)
-  const handleSubmit = (e: React.FormEvent) => {
+  // 2. Handle Form Submit (Simpan ke Backend API PUT /api/kontenportal)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveSuccess(false);
+    setErrorMessage(null);
 
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('headerText', headerText);
+      formData.append('paragraphText', paragraphText);
+      formData.append('folder1Title', folder1Title);
+      formData.append('folder1Subtitle', folder1Subtitle);
+      formData.append('folder2Title', folder2Title);
+      formData.append('folder2Subtitle', folder2Subtitle);
+      formData.append('whatsappLink', whatsappLink);
+
+      if (logoFile) {
+        formData.append('logo', logoFile);
+      }
+
+      const res = await fetch('/api/kontenportal', {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        const d = json.data;
+        const newLogo = d.logoUrl || savedLogoUrl;
+        setSavedLogoUrl(newLogo);
+        setLogoPreview(newLogo);
+        setLogoFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        setSaveSuccess(true);
+        setTimeout(() => {
+          setSaveSuccess(false);
+        }, 3500);
+      } else {
+        setErrorMessage(json.message || 'Gagal menyimpan perubahan konten portal');
+      }
+    } catch (err: any) {
+      console.error('Error saat menyimpan konten portal:', err);
+      setErrorMessage(err?.message || 'Terjadi kesalahan jaringan saat menyimpan konten portal');
+    } finally {
       setIsSaving(false);
-      setSaveSuccess(true);
-
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3500);
-    }, 600);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-5 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="w-10 h-10 border-3 border-[#075e54] border-t-transparent rounded-full animate-spin" />
+        <span className="font-headline text-sm font-bold text-[#54656f]">
+          Memuat konfigurasi konten portal...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-5 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto flex flex-col gap-6 pb-16">
@@ -80,10 +179,25 @@ export default function AdminKontenPortalPage() {
             Manajemen Konten Portal
           </h1>
           <p className="font-body text-xs sm:text-sm text-[#54656f] mt-1 max-w-2xl">
-            Atur logo, teks header, teks bagian depan folder kategori, paragraf deskripsi, dan tautan WhatsApp pada portal utama.
+            Atur logo, teks header, teks bagian depan folder kategori, paragraf footer, dan tautan WhatsApp pada portal utama.
           </p>
         </div>
       </div>
+
+      {/* NOTIFIKASI ERROR JIKA ADA */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 shadow-sm animate-fade-in transition-all"
+        >
+          <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 font-bold">
+            !
+          </div>
+          <div className="flex-1 text-sm font-headline font-semibold">
+            {errorMessage}
+          </div>
+        </div>
+      )}
 
       {/* NOTIFIKASI SUKSES (Banner Muncul Saat Simpan Berhasil) */}
       {saveSuccess && (
@@ -219,7 +333,7 @@ export default function AdminKontenPortalPage() {
           </div>
         </section>
 
-        {/* KOMPONEN 3: FORM UNTUK MENGGANTI PARAGRAF */}
+        {/* KOMPONEN 3: FORM UNTUK MENGGANTI PARAGRAF FOOTER */}
         <section className="bg-white rounded-[24px] border border-[#d8e0e5] p-6 sm:p-8 shadow-sm flex flex-col gap-5">
           <div className="flex items-center gap-3 pb-3 border-b border-[#e9edf0]">
             <div className="w-8 h-8 rounded-xl bg-[#e6f7ef] text-[#075e54] flex items-center justify-center font-bold">
@@ -228,14 +342,14 @@ export default function AdminKontenPortalPage() {
               </svg>
             </div>
             <div>
-              <h2 className="font-headline font-extrabold text-lg text-[#111b21]">Paragraf Deskripsi Portal</h2>
-              <p className="text-xs text-[#54656f]">Paragraf pengantar dan keterangan singkat tentang ekosistem aplikasi.</p>
+              <h2 className="font-headline font-extrabold text-lg text-[#111b21]">Paragraf Footer Portal</h2>
+              <p className="text-xs text-[#54656f]">Paragraf pengantar dan keterangan ekosistem aplikasi yang tampil di bagian footer portal.</p>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <label htmlFor="paragraphTextInput" className="text-xs font-headline font-bold text-[#111b21] uppercase tracking-wider">
-              Isi Paragraf Deskripsi <span className="text-red-500">*</span>
+              Isi Paragraf Footer <span className="text-red-500">*</span>
             </label>
             <textarea
               id="paragraphTextInput"
@@ -243,11 +357,11 @@ export default function AdminKontenPortalPage() {
               rows={4}
               value={paragraphText}
               onChange={(e) => setParagraphText(e.target.value)}
-              placeholder="Masukkan paragraf deskripsi portal..."
+              placeholder="Masukkan paragraf deskripsi footer portal..."
               className="w-full px-4 py-3 rounded-xl border border-[#d8e0e5] bg-white text-sm font-body text-[#111b21] placeholder-[#8696a0] focus:outline-none focus:ring-2 focus:ring-[#075e54] focus:border-[#075e54] transition-all leading-relaxed"
             />
             <p className="text-[11.5px] text-[#54656f]">
-              Teks ini juga digunakan sebagai metadata dan ringkasan ekosistem bagi pengunjung portal.
+              Teks ini ditampilkan pada bagian bawah (footer) portal di bawah kartu ekosistem aplikasi.
             </p>
           </div>
         </section>

@@ -18,3 +18,17 @@ export interface ThemeItem {
   isActive: boolean;
 }
 
+export interface PortalContentData {
+  id: number;
+  logoUrl: string;
+  headerText: string;
+  paragraphText: string;
+  folder1Title: string;
+  folder1Subtitle: string;
+  folder2Title: string;
+  folder2Subtitle: string;
+  whatsappLink: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+

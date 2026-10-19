@@ -21,11 +21,20 @@ export async function middleware(request: NextRequest) {
   const isValid = await isTokenValid(token);
 
   const isAdminApiRoute = pathname.startsWith('/api/admin');
+  const isKontenPortalApiRoute = pathname.startsWith('/api/kontenportal');
   const isAdminRoute = pathname.startsWith('/admin');
   const isLoginRoute = pathname === '/login';
 
   // 1. If accessing /api/admin/* without valid token -> return 401 JSON
   if (isAdminApiRoute && !isValid) {
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized: Sesi admin tidak valid atau telah kedaluwarsa' },
+      { status: 401 }
+    );
+  }
+
+  // 1b. If mutating /api/kontenportal without valid token -> return 401 JSON
+  if (isKontenPortalApiRoute && request.method !== 'GET' && !isValid) {
     return NextResponse.json(
       { success: false, message: 'Unauthorized: Sesi admin tidak valid atau telah kedaluwarsa' },
       { status: 401 }
@@ -54,5 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin', '/login', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/admin', '/login', '/api/admin/:path*', '/api/kontenportal/:path*'],
 };

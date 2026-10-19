@@ -5,22 +5,25 @@ import React from 'react';
 export interface WhatsAppFloatingButtonProps {
   phoneNumber?: string;
   message?: string;
+  whatsappLink?: string;
 }
 
 export const WhatsAppFloatingButton: React.FC<WhatsAppFloatingButtonProps> = ({
   phoneNumber = '6281348039947',
   message,
+  whatsappLink,
 }) => {
   const encodedMessage = message ? `?text=${encodeURIComponent(message)}` : '';
-  const waUrl = `https://wa.me/${phoneNumber}${encodedMessage}`;
+  const defaultWaUrl = `https://wa.me/${phoneNumber}${encodedMessage}`;
+  const targetUrl = whatsappLink || defaultWaUrl;
 
   return (
     <aside aria-label="Kontak WhatsApp" className="fixed bottom-6 right-6 z-40 sm:bottom-8 sm:right-8">
       <a
-        href={waUrl}
+        href={targetUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Hubungi kami via WhatsApp di 0813-4803-9947"
+        aria-label="Hubungi kami via WhatsApp"
         className="group relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#25d366] hover:bg-[#20ba5a] text-white shadow-[0_10px_25px_-4px_rgba(37,211,102,0.55),0_4px_10px_rgba(0,0,0,0.15)] hover:shadow-[0_14px_32px_-4px_rgba(37,211,102,0.7),0_6px_14px_rgba(0,0,0,0.2)] transition-all duration-300 transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-[#25d366]/40"
       >
         {/* Subtle Ambient Pulse Ring */}
