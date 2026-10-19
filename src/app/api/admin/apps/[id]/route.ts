@@ -5,6 +5,9 @@ import {
   saveIconFile,
   deleteOldIconFile,
   copyIconToCategory,
+  saveAppImageFile,
+  deleteAppImageFile,
+  validateAppImageFile,
   INVALID_IMAGE_ERROR_MESSAGE,
 } from '@/lib/iconStorage';
 import { AppCategory } from '@prisma/client';
@@ -45,6 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         data: {
           id: app.id,
           title: app.title,
+          name: app.title,
           description: app.description,
           url: app.url,
           category: app.category,
@@ -52,6 +56,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             ? app.iconPath
             : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
           rawIconPath: app.iconPath,
+          appImage: app.appImage ?? null,
+          rawAppImage: app.appImage ?? null,
           createdAt: app.createdAt,
           updatedAt: app.updatedAt,
         },
@@ -68,8 +74,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  let newUploadedFilePath: string | null = null;
-  let isNewFileCreated = false;
+  let newUploadedIconPath: string | null = null;
+  let isNewIconCreated = false;
+  let newUploadedAppImagePath: string | null = null;
+  let isNewAppImageCreated = false;
 
   try {
     const session = await getAuthSessionFromRequest(request);
@@ -101,6 +109,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     let url = existingApp.url;
     let category = existingApp.category;
     let iconInput: File | string | null = null;
+    let appImageInput: File | string | null = null;
+    let removeAppImage = false;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -110,6 +120,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (formData.has('url')) url = (formData.get('url') as string) || url;
       if (formData.has('category')) category = (formData.get('category') as AppCategory) || category;
       if (formData.has('icon')) iconInput = formData.get('icon') as File | string | null;
+      if (formData.has('appImageFile')) appImageInput = formData.get('appImageFile') as File | string | null;
+      else if (formData.has('appImage')) appImageInput = formData.get('appImage') as File | string | null;
+      if (formData.has('removeAppImage')) removeAppImage = formData.get('removeAppImage') === 'true';
     } else {
       const body = await request.json().catch(() => ({}));
       if (body.title || body.name) title = body.title || body.name;
@@ -117,6 +130,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (body.url) url = body.url;
       if (body.category) category = body.category;
       if (body.icon) iconInput = body.icon;
+      if (body.appImageFile) appImageInput = body.appImageFile;
+      else if (body.appImage) appImageInput = body.appImage;
+      if (body.removeAppImage) removeAppImage = Boolean(body.removeAppImage);
     }
 
     if (!title.trim() || !description.trim() || !url.trim()) {
@@ -129,11 +145,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const normCategory = category.toLowerCase().trim();
     const targetCategory = (normCategory === 'pemerintah' ? 'pemerintahan' : normCategory) as AppCategory;
 
-    // 3. Manajemen file icon baru / perpindahan kategori
+    // 3. Manajemen file icon
     let finalIconPath = existingApp.iconPath;
     const oldIconPath = existingApp.iconPath;
 
-    const hasNewUploadedFile = Boolean(
+    const hasNewUploadedIcon = Boolean(
       iconInput &&
       (
         (typeof iconInput === 'object' && 'size' in iconInput && (iconInput as { size: number }).size > 0) ||
@@ -141,13 +157,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     );
 
-    if (hasNewUploadedFile) {
-      // User mengunggah file gambar baru
+    if (hasNewUploadedIcon) {
       try {
         const saved = await saveIconFile(iconInput!, targetCategory);
         finalIconPath = saved.relativePath;
-        newUploadedFilePath = saved.relativePath;
-        isNewFileCreated = true;
+        newUploadedIconPath = saved.relativePath;
+        isNewIconCreated = true;
       } catch (valErr: unknown) {
         const err = valErr as Error;
         return NextResponse.json(
@@ -156,18 +171,54 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         );
       }
     } else if (targetCategory !== existingApp.category) {
-      // User memindahkan kategori tanpa upload gambar baru -> salin icon ke folder kategori baru
       try {
         const copied = await copyIconToCategory(oldIconPath, targetCategory);
         finalIconPath = copied.relativePath;
-        newUploadedFilePath = copied.relativePath;
-        isNewFileCreated = true;
+        newUploadedIconPath = copied.relativePath;
+        isNewIconCreated = true;
       } catch (copyErr) {
         console.warn('Gagal menyalin icon ke kategori baru:', copyErr);
       }
     }
 
-    // 4. Jalankan transaksi database (Prisma Transaction)
+    // 4. Manajemen file gambar aplikasi (appImage)
+    let finalAppImagePath = existingApp.appImage;
+    const oldAppImagePath = existingApp.appImage;
+
+    const hasNewUploadedAppImage = Boolean(
+      appImageInput &&
+      (
+        (typeof appImageInput === 'object' && 'size' in appImageInput && (appImageInput as { size: number }).size > 0) ||
+        (typeof appImageInput === 'string' && appImageInput.startsWith('data:'))
+      )
+    );
+
+    if (hasNewUploadedAppImage && appImageInput) {
+      if (typeof appImageInput === 'object' && 'size' in appImageInput) {
+        const imgError = validateAppImageFile(appImageInput as File);
+        if (imgError) {
+          if (isNewIconCreated && newUploadedIconPath) await deleteOldIconFile(newUploadedIconPath);
+          return NextResponse.json({ success: false, message: imgError }, { status: 400 });
+        }
+      }
+      try {
+        const saved = await saveAppImageFile(appImageInput!, targetCategory);
+        finalAppImagePath = saved;
+        newUploadedAppImagePath = saved;
+        isNewAppImageCreated = true;
+      } catch (imgSaveErr: unknown) {
+        const err = imgSaveErr as Error;
+        if (isNewIconCreated && newUploadedIconPath) await deleteOldIconFile(newUploadedIconPath);
+        return NextResponse.json(
+          { success: false, message: err.message || 'Gagal menyimpan gambar aplikasi' },
+          { status: 400 }
+        );
+      }
+    } else if (removeAppImage) {
+      finalAppImagePath = null;
+    }
+
+    // 5. Jalankan transaksi database (Prisma Transaction)
     let updatedApp;
     try {
       updatedApp = await prisma.$transaction(async (tx) => {
@@ -179,14 +230,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             url: url.trim(),
             category: targetCategory,
             iconPath: finalIconPath,
+            appImage: finalAppImagePath,
           },
         });
       });
     } catch (txError) {
       console.error('Transaksi database gagal saat update aplikasi:', txError);
-      // ROLLBACK: Hapus file icon baru jika database gagal update
-      if (isNewFileCreated && newUploadedFilePath) {
-        await deleteOldIconFile(newUploadedFilePath);
+      // ROLLBACK: Hapus file fisik baru jika database gagal update
+      if (isNewIconCreated && newUploadedIconPath) {
+        await deleteOldIconFile(newUploadedIconPath);
+      }
+      if (isNewAppImageCreated && newUploadedAppImagePath) {
+        await deleteAppImageFile(newUploadedAppImagePath);
       }
       return NextResponse.json(
         { success: false, message: 'Gagal memperbarui aplikasi di database. Operasi dibatalkan.' },
@@ -194,19 +249,25 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 5. Transaksi database SUKSES -> Hapus file icon lama dari disk jika diganti
-    if (isNewFileCreated && oldIconPath && oldIconPath !== finalIconPath) {
+    // 6. Transaksi database SUKSES -> Hapus file lama yang diganti/dihapus
+    if (isNewIconCreated && oldIconPath && oldIconPath !== finalIconPath) {
       await deleteOldIconFile(oldIconPath);
+    }
+    if ((isNewAppImageCreated || removeAppImage) && oldAppImagePath && oldAppImagePath !== finalAppImagePath) {
+      await deleteAppImageFile(oldAppImagePath);
     }
 
     const formattedUpdated = {
       id: updatedApp.id,
       title: updatedApp.title,
+      name: updatedApp.title,
       description: updatedApp.description,
       url: updatedApp.url,
       category: updatedApp.category,
       iconPath: `/api/icon?path=${encodeURIComponent(updatedApp.iconPath)}`,
       rawIconPath: updatedApp.iconPath,
+      appImage: updatedApp.appImage ?? null,
+      rawAppImage: updatedApp.appImage ?? null,
       createdAt: updatedApp.createdAt,
       updatedAt: updatedApp.updatedAt,
     };
@@ -221,8 +282,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     );
   } catch (error) {
     console.error('Error in PUT /api/admin/apps/[id]:', error);
-    if (isNewFileCreated && newUploadedFilePath) {
-      await deleteOldIconFile(newUploadedFilePath);
+    if (isNewIconCreated && newUploadedIconPath) {
+      await deleteOldIconFile(newUploadedIconPath);
+    }
+    if (isNewAppImageCreated && newUploadedAppImagePath) {
+      await deleteAppImageFile(newUploadedAppImagePath);
     }
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan pada server saat memperbarui aplikasi' },
@@ -280,15 +344,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 2. Penghapusan file fisik icon lama setelah transaksi DB sukses committed
+    // 2. Penghapusan file fisik icon dan gambar aplikasi lama setelah transaksi DB sukses
     if (deletedRecord && deletedRecord.iconPath) {
       await deleteOldIconFile(deletedRecord.iconPath);
+    }
+    if (deletedRecord && deletedRecord.appImage) {
+      await deleteAppImageFile(deletedRecord.appImage);
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Aplikasi dan icon berhasil dihapus',
+        message: 'Aplikasi beserta file asetnya berhasil dihapus',
       },
       { status: 200 }
     );

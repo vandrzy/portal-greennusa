@@ -256,3 +256,91 @@ export async function copyIconToCategory(
   const relativePath = `/assets/icons/${newCategoryFolder}/${newFileName}`;
   return { relativePath, fullPath: targetFullPath };
 }
+
+/**
+ * Validates whether the uploaded app image is valid (PNG, JPG, WEBP, SVG, GIF, <= 5MB).
+ */
+export function validateAppImageFile(file: File): string | null {
+  const normMime = file.type.toLowerCase();
+  const ext = path.extname(file.name).toLowerCase();
+
+  const isValidMime = ALLOWED_IMAGE_MIME_TYPES.includes(normMime);
+  const isValidExt = ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+
+  if (!isValidMime && !isValidExt) {
+    return 'Format gambar aplikasi tidak didukung. Gunakan PNG, JPG, WEBP, atau SVG.';
+  }
+
+  if (file.size > MAX_ICON_SIZE_BYTES) {
+    return 'Ukuran file gambar aplikasi maksimal 5MB.';
+  }
+
+  return null;
+}
+
+/**
+ * Saves an uploaded app banner/preview image to public/assets/appImages/{category}/
+ */
+export async function saveAppImageFile(
+  fileOrBase64: File | string,
+  category: string
+): Promise<string> {
+  const categoryFolder = getCategoryFolder(category);
+  const targetDir = path.join(process.cwd(), 'public', 'assets', 'appImages', categoryFolder);
+  await fs.mkdir(targetDir, { recursive: true });
+
+  let fileBuffer: Buffer;
+  let fileExt = '.png';
+
+  if (typeof fileOrBase64 === 'string') {
+    const match = fileOrBase64.match(/^data:([a-zA-Z0-9.+/-]+);base64,(.+)$/);
+    if (!match) {
+      throw new Error('Format gambar aplikasi tidak valid');
+    }
+    const mimeType = match[1];
+    fileBuffer = Buffer.from(match[2], 'base64');
+    const mimeToExt: Record<string, string> = {
+      'image/png': '.png',
+      'image/jpeg': '.jpg',
+      'image/jpg': '.jpg',
+      'image/webp': '.webp',
+      'image/svg+xml': '.svg',
+      'image/gif': '.gif',
+    };
+    fileExt = mimeToExt[mimeType] || '.png';
+  } else {
+    fileExt = path.extname(fileOrBase64.name).toLowerCase() || '.png';
+    const arrayBuffer = await fileOrBase64.arrayBuffer();
+    fileBuffer = Buffer.from(arrayBuffer);
+  }
+
+  const uniqueSuffix = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  const filename = `appimg_${uniqueSuffix}${fileExt}`;
+  const fullPath = path.join(targetDir, filename);
+
+  await fs.writeFile(fullPath, fileBuffer);
+  return `/assets/appImages/${categoryFolder}/${filename}`;
+}
+
+/**
+ * Deletes an app banner/preview image from public/assets/appImages/
+ */
+export async function deleteAppImageFile(imageUrl?: string | null): Promise<boolean> {
+  if (!imageUrl || typeof imageUrl !== 'string') return false;
+  if (!imageUrl.startsWith('/assets/appImages/')) return false;
+
+  try {
+    const cleanRelative = imageUrl.replace(/^\/+/, '');
+    const fullPath = path.join(process.cwd(), 'public', cleanRelative);
+    await fs.access(fullPath);
+    await fs.unlink(fullPath);
+    console.log(`[IconStorage] ✅ Berhasil menghapus gambar aplikasi dari disk: ${fullPath}`);
+    return true;
+  } catch (err: unknown) {
+    const error = err as NodeJS.ErrnoException;
+    if (error.code !== 'ENOENT') {
+      console.warn(`[IconStorage] Gagal menghapus file gambar aplikasi ${imageUrl}:`, error.message);
+    }
+    return false;
+  }
+}

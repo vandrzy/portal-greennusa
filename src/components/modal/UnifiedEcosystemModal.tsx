@@ -68,8 +68,8 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
     apps && apps.length > 0
       ? apps.filter((app) => app.category === activeCategory)
       : activeCategory === 'pemerintahan'
-      ? PEMERINTAHAN_APPS
-      : SWASTA_APPS;
+        ? PEMERINTAHAN_APPS
+        : SWASTA_APPS;
 
   const appsToRender = categoryApps;
   const categoryTitle = activeCategory === 'pemerintahan' ? 'Pemerintahan' : 'Swasta';
@@ -84,9 +84,8 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
       <div
         id="modalBackdrop"
         aria-hidden="true"
-        className={`fixed inset-0 z-40 backdrop-blur-[8px] transition-all duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 z-40 backdrop-blur-[8px] transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         style={{
           backgroundColor: overlayColor || 'rgba(7, 94, 84, 0.35)',
         }}
@@ -99,17 +98,15 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
         aria-modal="true"
         aria-labelledby="modalCategoryTitle"
         onClick={handleContainerClick}
-        className={`fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-3 sm:p-5 lg:p-6 transition-all duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-3 sm:p-5 lg:p-6 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Main Modal Card - Perfectly Centered, Constrained to Viewport Height */}
         <div
           id="modalCard"
           ref={modalCardRef}
-          className={`relative w-full max-w-[800px] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.22)] p-5 sm:p-6 flex flex-col gap-3 sm:gap-4 transform transition-all duration-300 my-auto mx-auto ${
-            isOpen ? 'scale-100' : 'scale-95'
-          }`}
+          className={`relative w-full max-w-[800px] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.22)] p-5 sm:p-6 flex flex-col gap-3 sm:gap-4 transform transition-all duration-300 my-auto mx-auto ${isOpen ? 'scale-100' : 'scale-95'
+            }`}
         >
           {/* MODAL HEADER */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-[#e9edf0] flex-shrink-0">
@@ -149,11 +146,10 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   type="button"
                   id="tabBtnPemerintahan"
                   onClick={() => handleCategorySwitch('pemerintahan')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
-                    activeCategory === 'pemerintahan'
+                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeCategory === 'pemerintahan'
                       ? 'bg-[#075e54] text-white font-bold shadow-sm'
                       : 'text-[#54656f] hover:text-[#075e54] hover:bg-white/60'
-                  }`}
+                    }`}
                 >
                   Pemerintahan
                 </button>
@@ -161,11 +157,10 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   type="button"
                   id="tabBtnSwasta"
                   onClick={() => handleCategorySwitch('swasta')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
-                    activeCategory === 'swasta'
+                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeCategory === 'swasta'
                       ? 'bg-[#075e54] text-white font-bold shadow-sm'
                       : 'text-[#54656f] hover:text-[#075e54] hover:bg-white/60'
-                  }`}
+                    }`}
                 >
                   Swasta
                 </button>
@@ -204,21 +199,29 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
 
             {/* Inline explanation on smaller screens (< 1340px) */}
             <div
-              className={`min-[1340px]:hidden overflow-hidden transition-all duration-200 ${
-                hoveredApp ? 'max-h-24 opacity-100 pt-1' : 'max-h-0 opacity-0 pointer-events-none'
-              }`}
+              className={`min-[1340px]:hidden overflow-hidden transition-all duration-200 ${hoveredApp ? 'max-h-80 opacity-100 pt-1' : 'max-h-0 opacity-0 pointer-events-none'
+                }`}
             >
               {hoveredApp && (
-                <div className="p-3 rounded-xl bg-[#f7f9fa] border border-[#128c7e]/30 flex items-start gap-2.5 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-[#128c7e] mt-1 shrink-0" />
-                  <div className="min-w-0 flex-1">
+                <div className="p-3 rounded-xl bg-[#f7f9fa] border border-[#128c7e]/30 flex flex-col gap-2.5 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#128c7e] shrink-0" />
                     <span className="font-headline text-[11px] font-bold text-[#075e54] block truncate">
                       {hoveredApp.title}
                     </span>
-                    <p className="font-body text-[11.5px] leading-snug text-[#3b4a54] line-clamp-2 mt-0.5">
-                      {renderFormattedText(hoveredApp.description)}
-                    </p>
                   </div>
+                  {hoveredApp.appImage && (
+                    <div className="w-full h-28 rounded-lg overflow-hidden border border-[#d8e0e5] bg-slate-100">
+                      <LocalIconImage
+                        src={hoveredApp.appImage}
+                        alt={`Gambar ${hoveredApp.title}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <p className="font-body text-[11.5px] leading-snug text-[#3b4a54] line-clamp-2">
+                    {renderFormattedText(hoveredApp.description)}
+                  </p>
                 </div>
               )}
             </div>
@@ -247,7 +250,9 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
           <div
             id="modalSideExplanationCard"
             aria-live="polite"
-            className={`hidden min-[1340px]:flex flex-col absolute top-0 left-[calc(100%+18px)] w-[320px] xl:w-[330px] h-[370px] max-h-[370px] min-h-[370px] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_50px_-12px_rgba(7,94,84,0.22)] p-6 z-50 transition-all duration-200 ${
+            className={`hidden min-[1340px]:flex flex-col absolute top-0 left-[calc(100%+18px)] w-[320px] xl:w-[330px] ${
+              displayedApp?.appImage ? 'h-[520px]' : 'h-[370px]'
+            } max-h-[calc(100vh-2rem)] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_50px_-12px_rgba(7,94,84,0.22)] p-6 z-50 transition-all duration-200 ${
               hoveredApp
                 ? 'opacity-100 translate-x-0 pointer-events-auto'
                 : 'opacity-0 -translate-x-3 pointer-events-none'
@@ -272,6 +277,7 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                 <div className="flex items-center gap-3.5 pt-1">
                   <div className="w-12 h-12 rounded-2xl bg-white border border-[#e1e7eb] flex items-center justify-center p-2.5 shadow-sm flex-shrink-0">
                     <LocalIconImage
+                      src={displayedApp.iconPath}
                       iconPath={displayedApp.iconPath}
                       altOverride={displayedApp.title}
                       className="w-7 h-7 object-contain"
@@ -284,8 +290,19 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   </div>
                 </div>
 
+                {/* Gambar Aplikasi (Tampil di antara Nama Aplikasi dan Deskripsi JIKA ADA) */}
+                {displayedApp.appImage && (
+                  <div className="my-2.5 w-full h-32 rounded-xl overflow-hidden border border-[#d8e0e5] bg-slate-100 flex-shrink-0">
+                    <LocalIconImage
+                      src={displayedApp.appImage}
+                      alt={`Gambar ${displayedApp.title}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
                 {/* Box Penjelasan (Ukuran Card Selalu Tetap Sama Walau Teks Pendek) */}
-                <div className="flex-1 my-2.5 p-3.5 rounded-2xl bg-[#f7f9fa] border border-[#e8ecef] overflow-y-auto custom-scrollbar flex flex-col justify-start">
+                <div className="flex-1 min-h-[175px] my-2.5 p-3.5 rounded-2xl bg-[#f7f9fa] border border-[#e8ecef] overflow-y-auto custom-scrollbar flex flex-col justify-start">
                   <span className="font-headline text-[10px] font-bold uppercase tracking-wider text-[#8696a0] mb-1.5 block">
                     Deskripsi Aplikasi:
                   </span>
@@ -295,18 +312,10 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                 </div>
 
                 {/* Footer Card Penjelasan */}
-                <div className="pt-3 border-t border-[#e9edf0] flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-[#8696a0] font-mono truncate max-w-[190px]">
+                <div className="pt-2.5 border-t border-[#e9edf0] flex items-center">
+                  <span className="text-[11px] text-[#8696a0] font-mono truncate w-full">
                     {displayedApp.url.replace(/^https?:\/\//, '')}
                   </span>
-                  <a
-                    href={displayedApp.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 rounded-full bg-[#e6f7ef] hover:bg-[#d0f2e3] text-[#075e54] font-headline text-xs font-bold transition-colors inline-flex items-center gap-1"
-                  >
-                    Buka ↗
-                  </a>
                 </div>
               </div>
             )}

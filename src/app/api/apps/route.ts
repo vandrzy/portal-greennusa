@@ -26,13 +26,15 @@ export async function GET(request: NextRequest) {
     const formattedApps = apps.map((app) => ({
       id: app.id, // UUID dari database
       title: app.title,
+      name: app.title,
       description: app.description,
       url: app.url,
       category: app.category,
       iconPath: app.iconPath.startsWith('/api/icon')
         ? app.iconPath
         : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
-      rawIconPath: app.iconPath, // Disimpan jika sewaktu-waktu dibutuhkan path aslinya
+      rawIconPath: app.iconPath,
+      appImage: app.appImage ?? null,
     }));
 
     return NextResponse.json(

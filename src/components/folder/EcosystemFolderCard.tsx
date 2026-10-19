@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CategoryType, EcosystemAppItem } from '../../types';
+import { PEMERINTAHAN_APPS, SWASTA_APPS } from '../../data';
 import { LocalIconImage } from '../common/LocalIconImage';
 
 export interface EcosystemFolderCardProps {
@@ -46,48 +47,15 @@ const STACK_SLOT_DEFS = [
   },
 ];
 
-const DEFAULT_FOREGROUND_STACK = [
-  {
-    stackClass: 'tile-stack-1',
-    sizeClass: 'w-[88px] h-[88px]',
-    borderClass: 'border-white/80',
-    shadowClass: 'shadow-lg',
-    iconPath: '/assets/icons/pemerintahan/image_603ea2.png',
-    alt: 'Aplikasi 1',
-  },
-  {
-    stackClass: 'tile-stack-2',
-    sizeClass: 'w-[90px] h-[90px]',
-    borderClass: 'border-white/80',
-    shadowClass: 'shadow-lg',
-    iconPath: '/assets/icons/pemerintahan/image_603e9d.png',
-    alt: 'Aplikasi 2',
-  },
-  {
-    stackClass: 'tile-stack-3',
-    sizeClass: 'w-[94px] h-[94px]',
-    borderClass: 'border-white/90',
-    shadowClass: 'shadow-xl',
-    iconPath: '/assets/icons/pemerintahan/image_603e81.png',
-    alt: 'Aplikasi 3',
-  },
-  {
-    stackClass: 'tile-stack-4',
-    sizeClass: 'w-[90px] h-[90px]',
-    borderClass: 'border-white/80',
-    shadowClass: 'shadow-lg',
-    iconPath: '/assets/icons/pemerintahan/image_604148.png',
-    alt: 'Aplikasi 4',
-  },
-  {
-    stackClass: 'tile-stack-5',
-    sizeClass: 'w-[88px] h-[88px]',
-    borderClass: 'border-white/80',
-    shadowClass: 'shadow-lg',
-    iconPath: '/assets/icons/pemerintahan/image_604162.png',
-    alt: 'Aplikasi 5',
-  },
-];
+// Helper acak array (Fisher-Yates shuffle)
+const shuffleArray = <T,>(arr: T[]): T[] => {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
 
 export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
   category,
@@ -106,31 +74,55 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
     }
   };
 
-  // Pilih 3 aplikasi untuk peek tile background
-  const peekApps: EcosystemAppItem[] = React.useMemo(() => {
-    if (apps.length >= 3) {
-      if (category === 'pemerintahan') {
-        return [apps[0], apps[1], apps[2]];
-      } else {
-        return [apps[0], apps[2] || apps[1], apps[4] || apps[2]];
-      }
-    }
-    return [];
+  // Kumpulan aplikasi yang valid sesuai dengan kategori folder
+  const categoryPool = useMemo(() => {
+    const valid = (apps || []).filter((a) => a.category === category);
+    if (valid.length > 0) return valid;
+    return category === 'pemerintahan' ? PEMERINTAHAN_APPS : SWASTA_APPS;
   }, [apps, category]);
 
-  // Pilih 5 aplikasi untuk foreground fanning stack (posisi slot 0..4)
-  const stackApps: EcosystemAppItem[] = React.useMemo(() => {
-    if (apps.length >= 5) {
-      if (category === 'pemerintahan') {
-        // Center (slot 2) adalah DALEV BAPPERIDA
-        return [apps[2], apps[1], apps[0], apps[3], apps[4]];
-      } else {
-        // Center (slot 2) adalah Kasir Borneo
-        return [apps[3], apps[4], apps[2], apps[1], apps[0]];
-      }
+  // State aplikasi yang diacak saat client me-render halaman
+  const [randomizedApps, setRandomizedApps] = useState<EcosystemAppItem[]>([]);
+
+  useEffect(() => {
+    if (categoryPool.length > 0) {
+      setRandomizedApps(shuffleArray(categoryPool));
     }
-    return [];
-  }, [apps, category]);
+  }, [categoryPool]);
+
+  // Gunakan hasil acak saat di client, atau categoryPool sebagai fallback deterministik
+  const activeList = randomizedApps.length > 0 ? randomizedApps : categoryPool;
+
+  // Pilih 5 aplikasi acak untuk foreground fanning stack (posisi slot 0..4)
+  const stackApps: EcosystemAppItem[] = useMemo(() => {
+    if (activeList.length === 0) return [];
+    if (activeList.length >= 5) {
+      return activeList.slice(0, 5);
+    }
+    // Jika jumlah aplikasi kurang dari 5, lakukan perulangan agar seluruh slot 5 kartu tetap terisi
+    const result: EcosystemAppItem[] = [];
+    for (let i = 0; i < 5; i++) {
+      result.push(activeList[i % activeList.length]);
+    }
+    return result;
+  }, [activeList]);
+
+  // Pilih 3 aplikasi acak untuk peek tile background (Layer 1.5)
+  const peekApps: EcosystemAppItem[] = useMemo(() => {
+    if (activeList.length === 0) return [];
+    if (activeList.length >= 8) {
+      // Gunakan 3 aplikasi berbeda dari 5 stackApps agar variasi icon maksimal
+      return activeList.slice(5, 8);
+    }
+    if (activeList.length >= 3) {
+      return [activeList[1 % activeList.length], activeList[2 % activeList.length], activeList[0]];
+    }
+    const result: EcosystemAppItem[] = [];
+    for (let i = 0; i < 3; i++) {
+      result.push(activeList[i % activeList.length]);
+    }
+    return result;
+  }, [activeList]);
 
   return (
     <div
@@ -194,37 +186,26 @@ export const EcosystemFolderCard: React.FC<EcosystemFolderCardProps> = ({
 
         {/* LAYER 2: APP TILES / UBIN APLIKASI MEKAR SAAT HOVER */}
         <div className="absolute inset-x-0 bottom-[236px] h-0 flex items-center justify-center z-25 overflow-visible pointer-events-none group-hover:pointer-events-auto">
-          {stackApps.length === 5
-            ? stackApps.map((app, index) => {
-              const slot = STACK_SLOT_DEFS[index];
-              return (
+          {stackApps.map((app, index) => {
+            const slot = STACK_SLOT_DEFS[index];
+            if (!slot) return null;
+            return (
+              <div
+                key={slot.stackClass}
+                title={app.title}
+                className={`${slot.stackClass} folder-transition absolute cursor-pointer`}
+              >
                 <div
-                  key={slot.stackClass}
-                  title={app.title}
-                  className={`${slot.stackClass} folder-transition absolute cursor-pointer`}
+                  className={`${slot.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${slot.borderClass} ${slot.shadowClass} opacity-100 hover:shadow-2xl transition-shadow`}
                 >
-                  <div
-                    className={`${slot.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${slot.borderClass} ${slot.shadowClass} opacity-100 hover:shadow-2xl transition-shadow`}
-                  >
-                    <LocalIconImage
-                      iconPath={app.iconPath}
-                      altOverride={app.title}
-                    />
-                  </div>
+                  <LocalIconImage
+                    iconPath={app.iconPath}
+                    altOverride={app.title}
+                  />
                 </div>
-              );
-            })
-            : DEFAULT_FOREGROUND_STACK.map((tile) => {
-              return (
-                <div key={tile.stackClass} className={`${tile.stackClass} folder-transition absolute cursor-pointer`}>
-                  <div
-                    className={`${tile.sizeClass} rounded-2xl bg-white p-2.5 flex items-center justify-center border ${tile.borderClass} ${tile.shadowClass} opacity-100`}
-                  >
-                    <LocalIconImage iconPath={tile.iconPath} altOverride={tile.alt} />
-                  </div>
-                </div>
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
 
         {/* LAYER 3: FRONT POUCH */}

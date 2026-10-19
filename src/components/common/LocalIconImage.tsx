@@ -5,8 +5,10 @@ import React, { useState, useEffect } from 'react';
 
 export interface LocalIconImageProps {
   iconPath?: string;
+  src?: string;
   className?: string;
   altOverride?: string;
+  alt?: string;
 }
 
 // Fallback SVG data URI jika aset gambar gagal dimuat
@@ -15,15 +17,28 @@ const DEFAULT_FALLBACK_SVG =
 
 export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   iconPath,
+  src,
   className = 'w-full h-full object-contain filter drop-shadow-sm',
-  altOverride = 'Icon Aplikasi',
+  altOverride,
+  alt = 'Gambar Aplikasi',
 }) => {
-  const targetSrc = iconPath || DEFAULT_FALLBACK_SVG;
-  const [imgSrc, setImgSrc] = useState<string>(targetSrc);
+  const rawPath = iconPath || src;
+  const targetAlt = altOverride || alt;
+
+  const resolvedSrc =
+    rawPath &&
+    (rawPath.startsWith('/assets/icons/') ||
+      rawPath.startsWith('/assets/logo/') ||
+      rawPath.startsWith('/assets/appImages/') ||
+      rawPath.startsWith('/assets/backgroundTheme/'))
+      ? `/api/icon?path=${encodeURIComponent(rawPath)}`
+      : rawPath || DEFAULT_FALLBACK_SVG;
+
+  const [imgSrc, setImgSrc] = useState<string>(resolvedSrc);
 
   useEffect(() => {
-    setImgSrc(targetSrc);
-  }, [targetSrc]);
+    setImgSrc(resolvedSrc);
+  }, [resolvedSrc]);
 
   const handleImageError = () => {
     if (imgSrc !== DEFAULT_FALLBACK_SVG) {
@@ -34,7 +49,7 @@ export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   return (
     <img
       src={imgSrc}
-      alt={altOverride}
+      alt={targetAlt}
       className={className}
       onError={handleImageError}
     />

@@ -98,6 +98,9 @@ export default function AdminAplikasiPage() {
     category: CategoryType;
     iconFile?: File | null;
     iconPath?: string;
+    appImage?: string | null;
+    appImageFile?: File | null;
+    removeAppImage?: boolean;
   }) => {
     if (selectedApp) {
       return await updateApp(selectedApp.id, data);

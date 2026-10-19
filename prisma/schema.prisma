@@ -32,6 +32,7 @@ model App {
   url         String      @db.VarChar(255)
   category    AppCategory
   iconPath    String      @map("icon_path") @db.VarChar(255)
+  appImage    String?     @map("app_image") @db.VarChar(255)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 

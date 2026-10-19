@@ -1,4 +1,5 @@
 export type CategoryType = 'pemerintahan' | 'swasta';
+export type FolderCategory = CategoryType;
 
 export interface EcosystemAppItem {
   id: string;
@@ -7,7 +8,10 @@ export interface EcosystemAppItem {
   url: string;
   category: CategoryType;
   iconPath: string;
+  appImage?: string | null;
 }
+
+export type EcosystemApp = EcosystemAppItem;
 
 export interface ThemeItem {
   id: string;

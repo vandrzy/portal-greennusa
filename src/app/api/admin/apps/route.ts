@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthSessionFromRequest } from '@/lib/auth';
-import { saveIconFile, deleteOldIconFile, INVALID_IMAGE_ERROR_MESSAGE } from '@/lib/iconStorage';
+import {
+  saveIconFile,
+  deleteOldIconFile,
+  saveAppImageFile,
+  deleteAppImageFile,
+  validateAppImageFile,
+  INVALID_IMAGE_ERROR_MESSAGE,
+} from '@/lib/iconStorage';
 import { AppCategory, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -62,6 +69,7 @@ export async function GET(request: NextRequest) {
     const formattedApps = apps.map((app) => ({
       id: app.id,
       title: app.title,
+      name: app.title,
       description: app.description,
       url: app.url,
       category: app.category,
@@ -69,6 +77,8 @@ export async function GET(request: NextRequest) {
         ? app.iconPath
         : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
       rawIconPath: app.iconPath,
+      appImage: app.appImage ?? null,
+      rawAppImage: app.appImage ?? null,
       createdAt: app.createdAt,
       updatedAt: app.updatedAt,
     }));
@@ -97,6 +107,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let savedIconPath: string | null = null;
+  let savedAppImagePath: string | null = null;
 
   try {
     // 1. Verifikasi autentikasi
@@ -115,6 +126,7 @@ export async function POST(request: NextRequest) {
     let url = '';
     let category = 'pemerintahan';
     let iconFile: File | string | null = null;
+    let appImageFile: File | string | null = null;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -123,6 +135,7 @@ export async function POST(request: NextRequest) {
       url = (formData.get('url') || '') as string;
       category = (formData.get('category') || 'pemerintahan') as string;
       iconFile = formData.get('icon') as File | string | null;
+      appImageFile = (formData.get('appImageFile') || formData.get('appImage')) as File | string | null;
     } else {
       const body = await request.json().catch(() => ({}));
       title = body.title || body.name || '';
@@ -130,6 +143,7 @@ export async function POST(request: NextRequest) {
       url = body.url || '';
       category = body.category || 'pemerintahan';
       iconFile = body.icon || null;
+      appImageFile = body.appImageFile || body.appImage || null;
     }
 
     // Validasi field teks
@@ -156,7 +170,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Simpan dan validasi file icon gambar
+    // 3. Simpan dan validasi file icon gambar (Wajib)
     try {
       const savedIcon = await saveIconFile(iconFile, prismaCategory);
       savedIconPath = savedIcon.relativePath;
@@ -168,7 +182,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Jalankan pembuatan record database secara transaksional
+    // 4. Simpan dan validasi file gambar aplikasi (Opsional)
+    if (appImageFile) {
+      if (typeof appImageFile === 'object' && 'size' in appImageFile && appImageFile.size > 0) {
+        const imgError = validateAppImageFile(appImageFile as File);
+        if (imgError) {
+          if (savedIconPath) await deleteOldIconFile(savedIconPath);
+          return NextResponse.json({ success: false, message: imgError }, { status: 400 });
+        }
+        try {
+          savedAppImagePath = await saveAppImageFile(appImageFile, prismaCategory);
+        } catch (imgSaveErr: unknown) {
+          const err = imgSaveErr as Error;
+          if (savedIconPath) await deleteOldIconFile(savedIconPath);
+          return NextResponse.json(
+            { success: false, message: err.message || 'Gagal menyimpan gambar aplikasi' },
+            { status: 400 }
+          );
+        }
+      } else if (typeof appImageFile === 'string' && appImageFile.startsWith('data:')) {
+        try {
+          savedAppImagePath = await saveAppImageFile(appImageFile, prismaCategory);
+        } catch (imgSaveErr: unknown) {
+          const err = imgSaveErr as Error;
+          if (savedIconPath) await deleteOldIconFile(savedIconPath);
+          return NextResponse.json(
+            { success: false, message: err.message || 'Gagal menyimpan gambar aplikasi' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // 5. Jalankan pembuatan record database secara transaksional
     let createdApp;
     try {
       createdApp = await prisma.$transaction(async (tx) => {
@@ -179,14 +225,18 @@ export async function POST(request: NextRequest) {
             url: url.trim(),
             category: prismaCategory,
             iconPath: savedIconPath!,
+            appImage: savedAppImagePath,
           },
         });
       });
     } catch (txError) {
       console.error('Transaksi database gagal saat create aplikasi:', txError);
-      // ROLLBACK: Hapus file icon yang sempat tersimpan di disk agar tidak menjadi file sampah
+      // ROLLBACK: Hapus file fisik yang sempat tersimpan di disk agar tidak menjadi file sampah
       if (savedIconPath) {
         await deleteOldIconFile(savedIconPath);
+      }
+      if (savedAppImagePath) {
+        await deleteAppImageFile(savedAppImagePath);
       }
       return NextResponse.json(
         { success: false, message: 'Gagal menyimpan aplikasi ke database. Operasi dibatalkan.' },
@@ -197,11 +247,14 @@ export async function POST(request: NextRequest) {
     const formattedCreated = {
       id: createdApp.id,
       title: createdApp.title,
+      name: createdApp.title,
       description: createdApp.description,
       url: createdApp.url,
       category: createdApp.category,
       iconPath: `/api/icon?path=${encodeURIComponent(createdApp.iconPath)}`,
       rawIconPath: createdApp.iconPath,
+      appImage: createdApp.appImage ?? null,
+      rawAppImage: createdApp.appImage ?? null,
       createdAt: createdApp.createdAt,
       updatedAt: createdApp.updatedAt,
     };
@@ -219,6 +272,9 @@ export async function POST(request: NextRequest) {
     // Cleanup jika terjadi error tak terduga
     if (savedIconPath) {
       await deleteOldIconFile(savedIconPath);
+    }
+    if (savedAppImagePath) {
+      await deleteAppImageFile(savedAppImagePath);
     }
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan pada server saat menambahkan aplikasi' },

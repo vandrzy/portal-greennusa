@@ -15,6 +15,9 @@ export interface AppFormModalProps {
     category: CategoryType;
     iconFile?: File | null;
     iconPath?: string;
+    appImage?: string | null;
+    appImageFile?: File | null;
+    removeAppImage?: boolean;
   }) => Promise<{ success: boolean; message?: string } | void> | void;
   initialData?: EcosystemAppItem | null;
 }
@@ -43,10 +46,14 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
   const [category, setCategory] = useState<CategoryType>('pemerintahan');
   const [iconPreview, setIconPreview] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [appImagePreview, setAppImagePreview] = useState<string>('');
+  const [appImageFile, setAppImageFile] = useState<File | null>(null);
+  const [removeAppImage, setRemoveAppImage] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const appImageInputRef = useRef<HTMLInputElement>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync form state when modal opens or initialData changes
@@ -55,6 +62,11 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('');
       setIsSubmitting(false);
       setSelectedFile(null);
+      setAppImageFile(null);
+      setRemoveAppImage(false);
+
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (appImageInputRef.current) appImageInputRef.current.value = '';
 
       if (initialData) {
         setTitle(initialData.title || '');
@@ -62,12 +74,14 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
         setUrl(initialData.url || '');
         setCategory(initialData.category || 'pemerintahan');
         setIconPreview(initialData.iconPath || '');
+        setAppImagePreview(initialData.appImage || '');
       } else {
         setTitle('');
         setDescription('');
         setUrl('');
         setCategory('pemerintahan');
         setIconPreview('');
+        setAppImagePreview('');
       }
     }
   }, [isOpen, initialData]);
@@ -102,7 +116,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Ukuran file gambar melebihi batas maksimal 5MB');
+      setErrorMessage('Ukuran file gambar icon melebihi batas maksimal 5MB');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -123,6 +137,48 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
   const handleTriggerUpload = () => {
     if (!isSubmitting) {
       fileInputRef.current?.click();
+    }
+  };
+
+  // Handle app preview banner image upload
+  const handleAppImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = /\.(png|jpe?g|webp|svg)$/i.test(fileName);
+    const isValidMime = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'].includes(fileType);
+
+    if (!isValidMime && !isValidExtension) {
+      setErrorMessage('File gambar aplikasi harus berupa gambar (PNG, JPG, JPEG, WEBP, atau SVG)');
+      if (appImageInputRef.current) appImageInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Ukuran gambar aplikasi maksimal 5MB');
+      if (appImageInputRef.current) appImageInputRef.current.value = '';
+      return;
+    }
+
+    setAppImageFile(file);
+    setRemoveAppImage(false);
+    setErrorMessage('');
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAppImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAppImage = () => {
+    setAppImageFile(null);
+    setAppImagePreview('');
+    setRemoveAppImage(true);
+    if (appImageInputRef.current) {
+      appImageInputRef.current.value = '';
     }
   };
 
@@ -158,6 +214,9 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
         category,
         iconFile: selectedFile,
         iconPath: iconPreview || DEFAULT_FALLBACK_ICON,
+        appImage: appImagePreview || null,
+        appImageFile,
+        removeAppImage,
       });
 
       if (res && typeof res === 'object' && res.success === false) {
@@ -343,7 +402,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
             {/* Field 5: Form Upload Icon & Preview (Gambar Khusus) */}
             <div className="flex flex-col gap-1.5">
               <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
-                Icon Aplikasi & Preview
+                Upload Icon Aplikasi <span className="text-red-500">*</span>
               </label>
 
               {/* Hidden Native File Input with Strict MIME Accept */}
@@ -416,6 +475,89 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Field 6: Upload Gambar Aplikasi (Opsional) */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
+                  Upload Gambar Aplikasi <span className="text-[11px] font-normal text-[#8696a0] normal-case tracking-normal">(Opsional)</span>
+                </label>
+                {appImagePreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAppImage}
+                    disabled={isSubmitting}
+                    className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                  >
+                    Hapus Gambar
+                  </button>
+                )}
+              </div>
+
+              {/* Hidden Native File Input for App Image */}
+              <input
+                ref={appImageInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                onChange={handleAppImageChange}
+                disabled={isSubmitting}
+                className="hidden"
+                id="app-image-upload"
+              />
+
+              <label
+                htmlFor="app-image-upload"
+                className={`flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed cursor-pointer transition-all overflow-hidden ${
+                  appImagePreview
+                    ? 'border-[#25d366] bg-[#f7fbf9] p-3'
+                    : 'border-[#d8e0e5] bg-[#f7f9fa] hover:bg-[#edf9f3] hover:border-[#128c7e] py-5 px-4'
+                } ${isSubmitting ? 'opacity-60 pointer-events-none' : ''}`}
+              >
+                {appImagePreview ? (
+                  <div className="w-full flex flex-col items-center gap-2">
+                    {/* Bagian Preview Gambar Aplikasi */}
+                    <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-[#d8e0e5] flex items-center justify-center">
+                      {appImagePreview.startsWith('data:') || appImagePreview.startsWith('blob:') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={appImagePreview}
+                          alt="Preview Gambar Aplikasi"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <LocalIconImage
+                          src={appImagePreview}
+                          alt="Preview Gambar Aplikasi"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-[#075e54] hover:underline">
+                      Klik untuk mengganti gambar aplikasi
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center text-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-[#d8e0e5] text-[#075e54] flex items-center justify-center shadow-sm">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.75}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-xs sm:text-sm font-bold text-[#111b21]">
+                      Pilih gambar banner/preview aplikasi
+                    </p>
+                    <p className="text-[11px] text-[#8696a0]">
+                      PNG, JPG, WEBP, SVG (Maks. 5MB) — Opsional
+                    </p>
+                  </div>
+                )}
+              </label>
             </div>
 
             {/* Footer Buttons */}

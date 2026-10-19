@@ -12,6 +12,9 @@ export interface AppPayload {
   icon?: File | string | null;
   iconPath?: string;
   iconFile?: File | null;
+  appImage?: string | null;
+  appImageFile?: File | null;
+  removeAppImage?: boolean;
 }
 
 export interface PaginationMeta {
@@ -184,6 +187,16 @@ export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       fd.append('icon', fileToUpload);
     } else if (payload.iconPath) {
       fd.append('icon', payload.iconPath);
+    }
+
+    if (payload.appImageFile instanceof File) {
+      fd.append('appImageFile', payload.appImageFile);
+    } else if (payload.appImage) {
+      fd.append('appImage', payload.appImage);
+    }
+
+    if (payload.removeAppImage) {
+      fd.append('removeAppImage', 'true');
     }
 
     return fd;
