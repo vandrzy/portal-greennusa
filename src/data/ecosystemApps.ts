@@ -7,7 +7,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Sistem pengendalian, pemantauan, dan evaluasi capaian rencana kerja pembangunan daerah (RKPD) serta program perangkat daerah Kota Samarinda secara berkala.',
     url: 'https://dalev.bapperida.samarindakota.go.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_604148.png',
+    iconPath: '/assets/icons/pemerintahan/Portal_Induk_Dalev_Bapperida.png',
   },
   {
     id: 'talent-go-sepakat',
@@ -15,7 +15,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Platform pemetaan profil talenta, distribusi peserta pelatihan kepemudaan, dan keaktifan anggota organisasi pemuda di seluruh kabupaten/kota se-Kalimantan Timur.',
     url: 'https://talent.gosepakat.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603e9d.png',
+    iconPath: '/assets/icons/pemerintahan/Talent_GoSepakat.png',
   },
   {
     id: 'go-sepakat',
@@ -23,7 +23,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Sistem pendataan kepemudaan terpadu untuk verifikasi kelengkapan dokumen legalitas, pemantauan indikator keaktifan, dan transparansi fasilitasi Organisasi Kepemudaan (OKP) di Kalimantan Timur.',
     url: 'https://gosepakat.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603ea2.png',
+    iconPath: '/assets/icons/pemerintahan/GoSepakat.png',
   },
   {
     id: 'sandi-prakat-pramuka',
@@ -31,7 +31,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Sistem informasi manajemen keanggotaan dan pendataan potensi anggota pramuka terpadu di tingkat Kwartir Daerah maupun Kwartir Cabang se-Kalimantan Timur.',
     url: 'https://sandi-prakat.pramukakaltim.or.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603e81.png',
+    iconPath: '/assets/icons/pemerintahan/Sandi_Prakat.png',
   },
   {
     id: 'ppid-kaltim',
@@ -39,7 +39,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Portal layanan keterbukaan informasi publik, permohonan dokumen resmi daerah, pengajuan keberatan, dan pelacakan status informasi publik Provinsi Kalimantan Timur.',
     url: 'https://ppid.kaltimprov.go.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_604162.png',
+    iconPath: '/assets/icons/pemerintahan/PPID_Kaltim.png',
   },
   {
     id: 'e-kianpuas-samarinda',
@@ -47,7 +47,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Layanan digital Survei Kepuasan Masyarakat (SKM) untuk menghimpun penilaian masyarakat dan mengukur indeks mutu pelayanan seluruh perangkat daerah Pemerintah Kota Samarinda.',
     url: 'https://e-kianpuas.samarindakota.go.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_604148 copy.png',
+    iconPath: '/assets/icons/pemerintahan/E-Kianpuas.png',
   },
   {
     id: 'kianprima-samarinda',
@@ -55,7 +55,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Sistem Penilaian Kinerja Pelayanan Prima untuk evaluasi mandiri, pemantauan standar layanan, dan peningkatan mutu inovasi pelayanan publik di lingkungan Pemerintah Kota Samarinda.',
     url: 'https://kianprima.samarindakota.go.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603ea2 copy.png',
+    iconPath: '/assets/icons/pemerintahan/KianPrima.png',
   },
   {
     id: 'land-management',
@@ -63,7 +63,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Sistem informasi manajemen pertanahan terpadu untuk digitalisasi dokumen aset tanah, pemetaan spasial, serta pengawasan status kepemilikan dan pemanfaatan lahan.',
     url: 'https://landmanagement.aplikasipos.id',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603e9d copy.png',
+    iconPath: '/assets/icons/pemerintahan/Land_Management.png',
   },
   {
     id: 'kur-kaltim',
@@ -71,7 +71,7 @@ export const PEMERINTAHAN_APPS: EcosystemAppItem[] = [
     description: 'Portal terpadu fasilitasi simulasi kredit, pengajuan pembiayaan usaha, dan pelacakan status Kredit Usaha Rakyat (KUR) yang menghubungkan UMKM Kalimantan Timur dengan perbankan penyalur.',
     url: 'https://kurkaltim.com',
     category: 'pemerintahan',
-    iconPath: '/assets/icons/pemerintahan/image_603e81 copy.png',
+    iconPath: '/assets/icons/pemerintahan/KUR_Kaltim.png',
   },
 ];
 
@@ -82,7 +82,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Platform berbasis *cloud* khusus pemilik konter dan teknisi HP profesional untuk mengelola transaksi servis, stok suku cadang, *follow-up* pelanggan, serta laporan keuangan toko.',
     url: 'https://fixmate.id',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603ea2.png',
+    iconPath: '/assets/icons/swasta/Fixmate.png',
   },
   {
     id: 'rajiin',
@@ -90,7 +90,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Aplikasi e-absensi dan manajemen produktivitas karyawan dengan fitur *Face Recognition*, *Geofencing GPS*, pantauan kunjungan klien, pengaturan *shift*, lembur, dan *reimbursement online*.',
     url: 'https://rajiin.id',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603e9d.png',
+    iconPath: '/assets/icons/swasta/Rajiin.png',
   },
   {
     id: 'kasir-borneo-frozen-mart',
@@ -98,7 +98,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Sistem kasir ritel (*Nusa Kasir*) dan manajemen inventori *frozen food* untuk Borneo Frozen Mart yang terintegrasi dengan pemindai *barcode*, manajemen harga, serta rekap penjualan harian.',
     url: 'https://kasirborneo.com',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603e81.png',
+    iconPath: '/assets/icons/swasta/Nusa_Kasir_-_Borneo_Frozen_Mart.png',
   },
   {
     id: 'hayyumart',
@@ -106,7 +106,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Platform belanja *online* kebutuhan pokok harian dan sembako grosir dengan fitur katalog produk digital, manajemen pesanan pelanggan, dan pembayaran otomatis terintegrasi.',
     url: 'https://hayyumart.com',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_604148.png',
+    iconPath: '/assets/icons/swasta/HayyuMart.png',
   },
   {
     id: 'ntn-aplikasi-pos',
@@ -114,7 +114,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Sistem *Point of Sale* (POS) multi-cabang untuk pencatatan transaksi kasir, sinkronisasi ketersediaan produk, serta pemantauan laporan analitik penjualan dan arus kas secara *real-time*.',
     url: 'https://aplikasipos.id',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_604162.png',
+    iconPath: '/assets/icons/swasta/NTN_POS.png',
   },
   {
     id: 'absensi-tambang',
@@ -122,7 +122,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Sistem pencatatan kehadiran dan manajemen jadwal *roster/shift* pekerja lapangan di area pertambangan menggunakan validasi radius titik koordinat geolokasi.',
     url: 'https://absensitambang.id',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603ea2 copy.png',
+    iconPath: '/assets/icons/swasta/Absensi_Tambang.png',
   },
   {
     id: 'sistem-pengajuan-keuangan',
@@ -130,7 +130,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Sistem digitalisasi pengajuan anggaran (*budgeting*), klaim *reimbursement*, dan pembayaran *invoice* internal dengan alur persetujuan berjenjang (*multi-level approval*) serta pelacakan pencairan dana.',
     url: 'https://keuangan.greennusa.com',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603e81 copy.png',
+    iconPath: '/assets/icons/swasta/Sistem_Pengajuan_Keuangan.png',
   },
   {
     id: 'manajemen-inventory',
@@ -138,7 +138,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Sistem pengelolaan pergudangan untuk memantau stok barang masuk-keluar, mencatat distribusi mutasi barang antar-outlet, dan memberikan peringatan otomatis saat persediaan mencapai batas minimum.',
     url: 'https://inventory.greennusa.com',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_604148 copy.png',
+    iconPath: '/assets/icons/swasta/Manajemen_Inventory.png',
   },
   {
     id: 'kelola-medsos',
@@ -146,6 +146,7 @@ export const SWASTA_APPS: EcosystemAppItem[] = [
     description: 'Platform terpusat untuk perencanaan kalender konten, penjadwalan publikasi otomatis lintas kanal, dan pemantauan performa interaksi (*engagement*) media sosial bisnis.',
     url: 'https://kelolamedsos.id',
     category: 'swasta',
-    iconPath: '/assets/icons/swasta/image_603e9d copy.png',
+    iconPath: '/assets/icons/swasta/Kelola_Medsos.png',
+    appImage: '/assets/appImages/swasta/appimg_1792397429561_9c293d7d.png',
   },
 ];

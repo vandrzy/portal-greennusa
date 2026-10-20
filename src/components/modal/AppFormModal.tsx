@@ -22,7 +22,7 @@ export interface AppFormModalProps {
   initialData?: EcosystemAppItem | null;
 }
 
-const DEFAULT_FALLBACK_ICON = '/assets/icons/pemerintahan/image_604148.png';
+const DEFAULT_FALLBACK_ICON = '/assets/icons/pemerintahan/Portal_Induk_Dalev_Bapperida.png';
 const ALLOWED_IMAGE_TYPES = [
   'image/png',
   'image/jpeg',

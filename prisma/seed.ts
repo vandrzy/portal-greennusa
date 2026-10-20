@@ -50,6 +50,7 @@ async function main() {
         url: app.url,
         category: app.category as AppCategory,
         iconPath: app.iconPath,
+        appImage: app.appImage || null,
       },
     });
     console.log(`📦 Seeded App: [${createdApp.category}] ${createdApp.title} -> UUID: ${createdApp.id}`);
