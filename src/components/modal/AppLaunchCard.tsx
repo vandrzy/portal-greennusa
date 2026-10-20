@@ -34,7 +34,7 @@ export const AppLaunchCard: React.FC<AppLaunchCardProps> = ({
         <LocalIconImage
           iconPath={app.iconPath}
           altOverride={app.title}
-          className="w-12 h-12 object-contain cursor-pointer transform group-hover:scale-105 transition-transform"
+          className="w-[78px] h-[78px] object-contain cursor-pointer transform group-hover:scale-105 transition-transform"
         />
       </div>
 
