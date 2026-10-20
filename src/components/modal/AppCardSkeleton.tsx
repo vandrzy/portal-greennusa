@@ -10,7 +10,7 @@ export const AppCardSkeleton: React.FC = () => {
     >
       {/* Icon Placeholder */}
       <div className="relative flex-shrink-0 flex items-center justify-center mt-1">
-        <div className="w-[78px] h-[78px] rounded-[18px] bg-slate-200 animate-pulse" />
+        <div className="w-[100px] h-[100px] rounded-[18px] bg-slate-200 animate-pulse" />
       </div>
 
       {/* App Title Placeholder */}
