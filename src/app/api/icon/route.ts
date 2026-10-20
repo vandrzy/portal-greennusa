@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Mencegah directory traversal attack
     const safeRelativePath = path.normalize(iconPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    const fullFilePath = path.join(process.cwd(), 'public', safeRelativePath);
+    const fullFilePath = path.join(process.cwd(), 'upload', safeRelativePath);
 
     const fileBuffer = await fs.readFile(fullFilePath);
     const ext = path.extname(fullFilePath).toLowerCase();

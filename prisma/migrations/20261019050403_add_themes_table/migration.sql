@@ -1,11 +1,11 @@
 -- CreateTable
 CREATE TABLE `themes` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `background_image` VARCHAR(191) NOT NULL,
-    `overlay_color` VARCHAR(191) NOT NULL,
-    `overlay_opacity` DOUBLE NOT NULL,
+    `id` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
+    `bg_image` VARCHAR(255) NOT NULL,
+    `modal_overlay_color` VARCHAR(100) NOT NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT false,
+    `is_default` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 

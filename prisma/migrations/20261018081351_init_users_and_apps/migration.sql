@@ -22,6 +22,7 @@ CREATE TABLE `apps` (
     `url` VARCHAR(255) NOT NULL,
     `category` ENUM('pemerintahan', 'swasta') NOT NULL,
     `icon_path` VARCHAR(255) NOT NULL,
+    `app_image` VARCHAR(255) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 

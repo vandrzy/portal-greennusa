@@ -26,7 +26,7 @@ export async function saveThemeImage(file: File): Promise<string> {
   const uniqueSuffix = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
   const filename = `theme_${uniqueSuffix}${ext}`;
 
-  const dirPath = path.join(process.cwd(), 'public', 'assets', 'backgroundTheme');
+  const dirPath = path.join(process.cwd(), 'upload', 'assets', 'backgroundTheme');
   await fs.mkdir(dirPath, { recursive: true });
 
   const filePath = path.join(dirPath, filename);
@@ -44,7 +44,7 @@ export async function deleteThemeImage(bgImageUrl: string | null | undefined): P
 
   try {
     const cleanRelativePath = bgImageUrl.replace(/^\//, '');
-    const fullPath = path.join(process.cwd(), 'public', cleanRelativePath);
+    const fullPath = path.join(process.cwd(), 'upload', cleanRelativePath);
     await fs.unlink(fullPath);
   } catch (error) {
     console.warn('Gagal menghapus file gambar tema lama atau file tidak ditemukan:', error);

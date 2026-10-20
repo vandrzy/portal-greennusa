@@ -71,8 +71,8 @@ export function resolveIconDiskPath(iconPath?: string | null): string | null {
       return null;
     }
 
-    const fullPath = path.resolve(process.cwd(), 'public', normalizedRelative);
-    const iconsBaseDir = path.resolve(process.cwd(), 'public', 'assets', 'icons');
+    const fullPath = path.resolve(process.cwd(), 'upload', normalizedRelative);
+    const iconsBaseDir = path.resolve(process.cwd(), 'upload', 'assets', 'icons');
 
     // Case-insensitive check for Windows drive letters and paths
     if (!fullPath.toLowerCase().startsWith(iconsBaseDir.toLowerCase())) {
@@ -128,7 +128,7 @@ export async function saveIconFile(
   category: string
 ): Promise<SaveIconResult> {
   const categoryFolder = getCategoryFolder(category);
-  const targetDir = path.join(process.cwd(), 'public', 'assets', 'icons', categoryFolder);
+  const targetDir = path.join(process.cwd(), 'upload', 'assets', 'icons', categoryFolder);
 
   // Ensure directory exists
   await fs.mkdir(targetDir, { recursive: true });
@@ -231,7 +231,7 @@ export async function copyIconToCategory(
   newCategory: string
 ): Promise<SaveIconResult> {
   const newCategoryFolder = getCategoryFolder(newCategory);
-  const targetDir = path.join(process.cwd(), 'public', 'assets', 'icons', newCategoryFolder);
+  const targetDir = path.join(process.cwd(), 'upload', 'assets', 'icons', newCategoryFolder);
   await fs.mkdir(targetDir, { recursive: true });
 
   const sourceFullPath = resolveIconDiskPath(currentIconPath);
@@ -286,7 +286,7 @@ export async function saveAppImageFile(
   category: string
 ): Promise<string> {
   const categoryFolder = getCategoryFolder(category);
-  const targetDir = path.join(process.cwd(), 'public', 'assets', 'appImages', categoryFolder);
+  const targetDir = path.join(process.cwd(), 'upload', 'assets', 'appImages', categoryFolder);
   await fs.mkdir(targetDir, { recursive: true });
 
   let fileBuffer: Buffer;
@@ -331,7 +331,7 @@ export async function deleteAppImageFile(imageUrl?: string | null): Promise<bool
 
   try {
     const cleanRelative = imageUrl.replace(/^\/+/, '');
-    const fullPath = path.join(process.cwd(), 'public', cleanRelative);
+    const fullPath = path.join(process.cwd(), 'upload', cleanRelative);
     await fs.access(fullPath);
     await fs.unlink(fullPath);
     console.log(`[IconStorage] ✅ Berhasil menghapus gambar aplikasi dari disk: ${fullPath}`);

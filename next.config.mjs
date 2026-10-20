@@ -2,7 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    unoptimized: true, // Memastikan aset lokal di public/assets bekerja tanpa kendala
+    unoptimized: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/assets/:path*',
+        destination: '/api/assets/:path*',
+      },
+    ];
   },
 };
 

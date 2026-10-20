@@ -44,7 +44,7 @@ export async function saveLogoFile(file: File): Promise<string> {
     throw new Error('Ukuran file logo melebihi batas maksimal 5MB');
   }
 
-  const logoDir = path.join(process.cwd(), 'public', 'assets', 'logo');
+  const logoDir = path.join(process.cwd(), 'upload', 'assets', 'logo');
   await fs.mkdir(logoDir, { recursive: true });
 
   const randomHex = crypto.randomBytes(6).toString('hex');
@@ -85,8 +85,8 @@ export async function deleteOldLogoFile(logoUrl?: string | null): Promise<void> 
       return;
     }
 
-    const fullPath = path.resolve(process.cwd(), 'public', normalizedRelative);
-    const logoBaseDir = path.resolve(process.cwd(), 'public', 'assets', 'logo');
+    const fullPath = path.resolve(process.cwd(), 'upload', normalizedRelative);
+    const logoBaseDir = path.resolve(process.cwd(), 'upload', 'assets', 'logo');
 
     if (!fullPath.toLowerCase().startsWith(logoBaseDir.toLowerCase())) {
       console.warn('[LogoStorage] Attempted delete outside logo directory:', fullPath);
