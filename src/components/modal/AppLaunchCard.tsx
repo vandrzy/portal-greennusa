@@ -31,13 +31,11 @@ export const AppLaunchCard: React.FC<AppLaunchCardProps> = ({
     >
       {/* Icon Container */}
       <div className="relative flex-shrink-0 flex items-center justify-center mt-1">
-        <div className="w-12 h-12 rounded-[14px] bg-white border border-[#e1e7eb] flex items-center justify-center p-2 shadow-sm cursor-pointer transform group-hover:scale-105 transition-transform">
-          <LocalIconImage
-            iconPath={app.iconPath}
-            altOverride={app.title}
-            className="w-8 h-8 object-contain"
-          />
-        </div>
+        <LocalIconImage
+          iconPath={app.iconPath}
+          altOverride={app.title}
+          className="w-12 h-12 object-contain cursor-pointer transform group-hover:scale-105 transition-transform"
+        />
       </div>
 
       {/* App Title */}

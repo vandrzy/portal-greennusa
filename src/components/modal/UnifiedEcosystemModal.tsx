@@ -275,14 +275,12 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
 
                 {/* Identitas Aplikasi */}
                 <div className="flex items-center gap-3.5 pt-1">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#e1e7eb] flex items-center justify-center p-2.5 shadow-sm flex-shrink-0">
-                    <LocalIconImage
-                      src={displayedApp.iconPath}
-                      iconPath={displayedApp.iconPath}
-                      altOverride={displayedApp.title}
-                      className="w-7 h-7 object-contain"
-                    />
-                  </div>
+                  <LocalIconImage
+                    src={displayedApp.iconPath}
+                    iconPath={displayedApp.iconPath}
+                    altOverride={displayedApp.title}
+                    className="w-12 h-12 object-contain flex-shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
                     <h4 className="font-headline text-[15px] font-extrabold text-[#111b21] leading-snug break-words line-clamp-2">
                       {displayedApp.title}
