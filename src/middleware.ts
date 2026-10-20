@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { jwtVerify } from 'jose/jwt/verify';
 
 const AUTH_COOKIE_NAME = 'auth_token';
-const JWT_SECRET = process.env.JWT_SECRET || 'greennusa-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'greennusa-secret-key';
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 async function isTokenValid(token: string | undefined): Promise<boolean> {
@@ -63,5 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin', '/login', '/api/admin/:path*', '/api/kontenportal/:path*'],
+  matcher: ['/admin/:path*', '/admin', '/login', '/api/admin/:path*', '/api/kontenportal', '/api/kontenportal/:path*'],
 };

@@ -1,6 +1,4 @@
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
+import { saveValidatedImage, deleteAssetSafely } from './baseFileStorage';
 
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   'image/png': '.png',
@@ -22,31 +20,24 @@ export function validateThemeImage(file: File): string | null {
 }
 
 export async function saveThemeImage(file: File): Promise<string> {
-  const ext = ALLOWED_MIME_TYPES[file.type] || '.png';
-  const uniqueSuffix = `${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-  const filename = `theme_${uniqueSuffix}${ext}`;
+  const validationError = validateThemeImage(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
 
-  const dirPath = path.join(process.cwd(), 'upload', 'assets', 'backgroundTheme');
-  await fs.mkdir(dirPath, { recursive: true });
+  const result = await saveValidatedImage(file, {
+    subFolder: 'backgroundTheme',
+    filePrefix: 'theme',
+    maxSizeBytes: MAX_FILE_SIZE,
+  });
 
-  const filePath = path.join(dirPath, filename);
-  const arrayBuffer = await file.arrayBuffer();
-  await fs.writeFile(filePath, Buffer.from(arrayBuffer));
-
-  return `/assets/backgroundTheme/${filename}`;
+  return result.relativePath;
 }
 
 export async function deleteThemeImage(bgImageUrl: string | null | undefined): Promise<void> {
   if (!bgImageUrl) return;
-  // Jangan pernah hapus gambar default!
   if (bgImageUrl.includes('default.png')) return;
   if (!bgImageUrl.startsWith('/assets/backgroundTheme/')) return;
 
-  try {
-    const cleanRelativePath = bgImageUrl.replace(/^\//, '');
-    const fullPath = path.join(process.cwd(), 'upload', cleanRelativePath);
-    await fs.unlink(fullPath);
-  } catch (error) {
-    console.warn('Gagal menghapus file gambar tema lama atau file tidak ditemukan:', error);
-  }
+  await deleteAssetSafely(bgImageUrl, ['default.png']);
 }

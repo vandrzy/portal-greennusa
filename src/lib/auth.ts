@@ -3,7 +3,14 @@ import { cookies } from 'next/headers';
 
 export const AUTH_COOKIE_NAME = 'auth_token';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'greennusa-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'greennusa-secret-key';
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET && !process.env.AUTH_SECRET) {
+  console.warn(
+    '[SECURITY WARNING]: JWT_SECRET atau AUTH_SECRET belum diset di environment produksi! Menggunakan fallback secret default tidak disarankan untuk keamanan produksi.'
+  );
+}
+
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface TokenPayload {

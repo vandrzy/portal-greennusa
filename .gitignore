@@ -23,8 +23,14 @@ lerna-debug.log*
 # Vite cache
 .vite/
 
+# TypeScript cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
 # Environment variables
 .env
+.env.*
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local

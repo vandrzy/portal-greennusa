@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Ambil data agregat secara transaksional menggunakan prisma.$transaction
-    const [pemerintahanCount, swastaCount, totalCount] = await prisma.$transaction([
+    // 2. Ambil data agregat secara paralel menggunakan Promise.all untuk kecepatan respons optimal
+    const [pemerintahanCount, swastaCount, totalCount] = await Promise.all([
       prisma.app.count({ where: { category: 'pemerintahan' } }),
       prisma.app.count({ where: { category: 'swasta' } }),
       prisma.app.count(),
@@ -32,7 +32,12 @@ export async function GET(request: NextRequest) {
           total: totalCount,
         },
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
     );
   } catch (error) {
     console.error('Error in GET /api/admin/dashboard:', error);
