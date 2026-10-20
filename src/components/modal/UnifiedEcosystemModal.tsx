@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CategoryType, EcosystemAppItem } from '../../types';
 import { PEMERINTAHAN_APPS, SWASTA_APPS } from '../../data';
 import { AppLaunchCard } from './AppLaunchCard';
+import { AppCardSkeleton } from './AppCardSkeleton';
 import { LocalIconImage } from '../common/LocalIconImage';
 
 const renderFormattedText = (text: string) => {
@@ -20,6 +21,18 @@ const renderFormattedText = (text: string) => {
   });
 };
 
+const getFallbackApps = (category: CategoryType, pageNum: number, pageSize: number = 9) => {
+  const allCategoryApps = category === 'pemerintahan' ? PEMERINTAHAN_APPS : SWASTA_APPS;
+  const start = (pageNum - 1) * pageSize;
+  const end = start + pageSize;
+  const slice = allCategoryApps.slice(start, end);
+  return {
+    apps: slice,
+    total: allCategoryApps.length,
+    hasMore: end < allCategoryApps.length,
+  };
+};
+
 export interface UnifiedEcosystemModalProps {
   isOpen: boolean;
   activeCategory: CategoryType;
@@ -32,12 +45,22 @@ export interface UnifiedEcosystemModalProps {
 export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
   isOpen,
   activeCategory,
-  apps,
   onSwitchCategory,
   onClose,
   overlayColor,
 }) => {
   const modalCardRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef<boolean>(false);
+
+  const [displayedApps, setDisplayedApps] = useState<EcosystemAppItem[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+
   const [hoveredApp, setHoveredApp] = useState<EcosystemAppItem | null>(null);
   const lastHoveredApp = useRef<EcosystemAppItem | null>(null);
 
@@ -46,12 +69,120 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
   }
   const displayedApp = hoveredApp || lastHoveredApp.current;
 
-  // Reset hover state when modal is closed
+  // Fetch paginated apps from /api/apps
+  const fetchApps = useCallback(
+    async (pageNum: number, category: CategoryType, isFirstPage: boolean) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
+      if (isFirstPage) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      try {
+        const res = await fetch(`/api/apps?category=${category}&page=${pageNum}&limit=9`, {
+          cache: 'no-store',
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setDisplayedApps((prev) => (isFirstPage ? json.data : [...prev, ...json.data]));
+            setPage(pageNum);
+            setHasMore(Boolean(json.pagination?.hasMore));
+            if (typeof json.pagination?.total === 'number') {
+              setTotalCount(json.pagination.total);
+            }
+            return;
+          }
+        }
+
+        // Fallback jika API gagal
+        const fallback = getFallbackApps(category, pageNum, 9);
+        setDisplayedApps((prev) => (isFirstPage ? fallback.apps : [...prev, ...fallback.apps]));
+        setPage(pageNum);
+        setHasMore(fallback.hasMore);
+        setTotalCount(fallback.total);
+      } catch (error) {
+        console.error('Gagal mengambil data aplikasi paginated:', error);
+        const fallback = getFallbackApps(category, pageNum, 9);
+        setDisplayedApps((prev) => (isFirstPage ? fallback.apps : [...prev, ...fallback.apps]));
+        setPage(pageNum);
+        setHasMore(fallback.hasMore);
+        setTotalCount(fallback.total);
+      } finally {
+        isFetchingRef.current = false;
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    []
+  );
+
+  // Load page 1 whenever modal opens or category switches
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setDisplayedApps([]);
+      setPage(1);
+      setHasMore(true);
+      setTotalCount(null);
+      setHoveredApp(null);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      fetchApps(1, activeCategory, true);
+    } else {
       setHoveredApp(null);
     }
-  }, [isOpen]);
+  }, [isOpen, activeCategory, fetchApps]);
+
+  // Load next page function
+  const loadMore = useCallback(() => {
+    if (isFetchingRef.current || !hasMore || isLoading || isLoadingMore) {
+      return;
+    }
+    fetchApps(page + 1, activeCategory, false);
+  }, [hasMore, isLoading, isLoadingMore, page, activeCategory, fetchApps]);
+
+  // Setup Intersection Observer on sentinel element
+  useEffect(() => {
+    if (!isOpen || isLoading || !hasMore) return;
+
+    const sentinel = sentinelRef.current;
+    const scrollContainer = scrollContainerRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !isFetchingRef.current) {
+          loadMore();
+        }
+      },
+      {
+        root: scrollContainer,
+        rootMargin: '100px',
+        threshold: 0.05,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isOpen, isLoading, hasMore, loadMore]);
+
+  // Failsafe scroll listener
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const distanceToBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (distanceToBottom < 120 && hasMore && !isLoading && !isLoadingMore && !isFetchingRef.current) {
+      loadMore();
+    }
+  };
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (modalCardRef.current && !modalCardRef.current.contains(e.target as Node)) {
@@ -60,23 +191,18 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
   };
 
   const handleCategorySwitch = (category: CategoryType) => {
+    if (category === activeCategory) return;
     setHoveredApp(null);
     onSwitchCategory(category);
   };
 
-  const categoryApps =
-    apps && apps.length > 0
-      ? apps.filter((app) => app.category === activeCategory)
-      : activeCategory === 'pemerintahan'
-        ? PEMERINTAHAN_APPS
-        : SWASTA_APPS;
-
-  const appsToRender = categoryApps;
   const categoryTitle = activeCategory === 'pemerintahan' ? 'Pemerintahan' : 'Swasta';
-  const badgeText =
-    activeCategory === 'pemerintahan'
-      ? `${appsToRender.length} Aplikasi`
-      : `${appsToRender.length} Solusi Bisnis`;
+  const totalDisplay = totalCount !== null ? totalCount : displayedApps.length;
+  const badgeText = isLoading
+    ? 'Memuat...'
+    : activeCategory === 'pemerintahan'
+      ? `${totalDisplay} Aplikasi`
+      : `${totalDisplay} Solusi Bisnis`;
 
   return (
     <>
@@ -84,8 +210,9 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
       <div
         id="modalBackdrop"
         aria-hidden="true"
-        className={`fixed inset-0 z-40 backdrop-blur-[8px] transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+        className={`fixed inset-0 z-40 backdrop-blur-[8px] transition-all duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
         style={{
           backgroundColor: overlayColor || 'rgba(7, 94, 84, 0.35)',
         }}
@@ -98,15 +225,17 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
         aria-modal="true"
         aria-labelledby="modalCategoryTitle"
         onClick={handleContainerClick}
-        className={`fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-3 sm:p-5 lg:p-6 transition-all duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+        className={`fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-3 sm:p-5 lg:p-6 transition-all duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
       >
         {/* Main Modal Card - Perfectly Centered, Constrained to Viewport Height */}
         <div
           id="modalCard"
           ref={modalCardRef}
-          className={`relative w-full max-w-[800px] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.22)] p-5 sm:p-6 flex flex-col gap-3 sm:gap-4 transform transition-all duration-300 my-auto mx-auto ${isOpen ? 'scale-100' : 'scale-95'
-            }`}
+          className={`relative w-full max-w-[800px] h-[580px] sm:h-[640px] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.22)] p-5 sm:p-6 flex flex-col gap-3 sm:gap-4 transform transition-all duration-300 my-auto mx-auto ${
+            isOpen ? 'scale-100' : 'scale-95'
+          }`}
         >
           {/* MODAL HEADER */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-[#e9edf0] flex-shrink-0">
@@ -146,10 +275,11 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   type="button"
                   id="tabBtnPemerintahan"
                   onClick={() => handleCategorySwitch('pemerintahan')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeCategory === 'pemerintahan'
+                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                    activeCategory === 'pemerintahan'
                       ? 'bg-[#075e54] text-white font-bold shadow-sm'
                       : 'text-[#54656f] hover:text-[#075e54] hover:bg-white/60'
-                    }`}
+                  }`}
                 >
                   Pemerintahan
                 </button>
@@ -157,10 +287,11 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
                   type="button"
                   id="tabBtnSwasta"
                   onClick={() => handleCategorySwitch('swasta')}
-                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeCategory === 'swasta'
+                  className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                    activeCategory === 'swasta'
                       ? 'bg-[#075e54] text-white font-bold shadow-sm'
                       : 'text-[#54656f] hover:text-[#075e54] hover:bg-white/60'
-                    }`}
+                  }`}
                 >
                   Swasta
                 </button>
@@ -180,27 +311,61 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
           </div>
 
           {/* SCROLLABLE MODAL BODY - Scroll hanya terjadi di dalam modal */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1.5 -mr-1 flex flex-col gap-3.5">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1.5 -mr-1 flex flex-col gap-3.5"
+          >
             {/* 3x3 CARDS GRID */}
             <div
               id={activeCategory === 'pemerintahan' ? 'gridPemerintahan' : 'gridSwasta'}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-0.5 transition-opacity duration-200"
             >
-              {appsToRender.map((app) => (
-                <AppLaunchCard
-                  key={app.id}
-                  app={app}
-                  isHovered={hoveredApp?.id === app.id}
-                  onHover={setHoveredApp}
-                  onLeave={() => setHoveredApp(null)}
-                />
-              ))}
+              {isLoading ? (
+                // Initial Load: 9 Skeleton Cards
+                Array.from({ length: 9 }).map((_, idx) => (
+                  <AppCardSkeleton key={`init-skeleton-${idx}`} />
+                ))
+              ) : (
+                <>
+                  {displayedApps.map((app) => (
+                    <AppLaunchCard
+                      key={app.id}
+                      app={app}
+                      isHovered={hoveredApp?.id === app.id}
+                      onHover={setHoveredApp}
+                      onLeave={() => setHoveredApp(null)}
+                    />
+                  ))}
+
+                  {/* Infinite Scroll: Skeleton Cards while fetching next batch */}
+                  {isLoadingMore && (
+                    <>
+                      {Array.from({
+                        length: totalCount
+                          ? Math.min(3, Math.max(1, totalCount - displayedApps.length))
+                          : 3,
+                      }).map((_, idx) => (
+                        <AppCardSkeleton key={`more-skeleton-${idx}`} />
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
             </div>
+
+            {/* Sentinel for Infinite Scroll Intersection Observer */}
+            <div
+              ref={sentinelRef}
+              className="col-span-full h-2 w-full pointer-events-none opacity-0"
+              aria-hidden="true"
+            />
 
             {/* Inline explanation on smaller screens (< 1340px) */}
             <div
-              className={`min-[1340px]:hidden overflow-hidden transition-all duration-200 ${hoveredApp ? 'max-h-80 opacity-100 pt-1' : 'max-h-0 opacity-0 pointer-events-none'
-                }`}
+              className={`min-[1340px]:hidden overflow-hidden transition-all duration-200 ${
+                hoveredApp ? 'max-h-80 opacity-100 pt-1' : 'max-h-0 opacity-0 pointer-events-none'
+              }`}
             >
               {hoveredApp && (
                 <div className="p-3 rounded-xl bg-[#f7f9fa] border border-[#128c7e]/30 flex flex-col gap-2.5 shadow-sm">
@@ -234,7 +399,11 @@ export const UnifiedEcosystemModal: React.FC<UnifiedEcosystemModalProps> = ({
               <span id="footerNote" className="text-slate-600 font-medium truncate">
                 {hoveredApp
                   ? `Aplikasi aktif: ${hoveredApp.title}`
-                  : 'GreenNusa Computindo — Solusi Digital Terintegrasi'}
+                  : isLoading
+                    ? 'Memuat daftar aplikasi...'
+                    : isLoadingMore
+                      ? 'Memuat aplikasi berikutnya...'
+                      : 'GreenNusa Computindo — Solusi Digital Terintegrasi'}
               </span>
             </div>
             <span className="text-slate-400 flex-shrink-0">
