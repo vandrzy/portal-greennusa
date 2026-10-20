@@ -190,8 +190,16 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('Nama aplikasi wajib diisi');
       return;
     }
+    if (title.trim().length > 30) {
+      setErrorMessage('Nama aplikasi maksimal 30 karakter');
+      return;
+    }
     if (!description.trim()) {
       setErrorMessage('Deskripsi wajib diisi');
+      return;
+    }
+    if (description.trim().length > 200) {
+      setErrorMessage('Deskripsi aplikasi maksimal 200 karakter');
       return;
     }
     if (!url.trim()) {
@@ -320,16 +328,22 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Field 1: Nama Aplikasi */}
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="appName"
-                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-              >
-                Nama Aplikasi <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="appName"
+                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                >
+                  Nama Aplikasi <span className="text-red-500">*</span>
+                </label>
+                <span className={`text-[11px] font-mono ${title.length > 30 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                  {title.length}/30
+                </span>
+              </div>
               <input
                 id="appName"
                 type="text"
                 required
+                maxLength={30}
                 disabled={isSubmitting}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -340,15 +354,21 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
 
             {/* Field 2: Deskripsi */}
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="appDescription"
-                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-              >
-                Deskripsi <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="appDescription"
+                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                >
+                  Deskripsi <span className="text-red-500">*</span>
+                </label>
+                <span className={`text-[11px] font-mono ${description.length > 200 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                  {description.length}/200
+                </span>
+              </div>
               <textarea
                 id="appDescription"
                 required
+                maxLength={200}
                 rows={3}
                 disabled={isSubmitting}
                 value={description}

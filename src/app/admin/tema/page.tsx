@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ThemeItem } from '@/types';
 import { ThemeFormModal } from '@/components/modal/ThemeFormModal';
+import { useToast } from '@/context/ToastContext';
 
 const ITEMS_PER_PAGE = 5;
 
 export default function AdminTemaPage() {
+  const { showToast } = useToast();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,17 +24,8 @@ export default function AdminTemaPage() {
   const [themeToDelete, setThemeToDelete] = useState<ThemeItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Notification / Alert Message
-  const [alertMessage, setAlertMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
-
   const showAlert = (type: 'success' | 'error', text: string) => {
-    setAlertMessage({ type, text });
-    setTimeout(() => {
-      setAlertMessage((prev) => (prev?.text === text ? null : prev));
-    }, 4000);
+    showToast(type, text);
   };
 
   const fetchThemes = useCallback(async (page: number, search: string) => {
@@ -187,29 +180,6 @@ export default function AdminTemaPage() {
 
   return (
     <div className="flex-1 p-5 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto flex flex-col gap-6">
-      {/* ALERT NOTIFICATION */}
-      {alertMessage && (
-        <div
-          className={`p-4 rounded-2xl text-xs sm:text-sm font-headline font-semibold flex items-center justify-between shadow-sm transition-all animate-scale-up ${
-            alertMessage.type === 'success'
-              ? 'bg-[#e6f7ef] border border-[#bce8d4] text-[#075e54]'
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span>{alertMessage.type === 'success' ? '✅' : '⚠️'}</span>
-            <span>{alertMessage.text}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setAlertMessage(null)}
-            className="text-xs font-bold opacity-70 hover:opacity-100"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* 1. HEADER BAGIAN ATAS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#e1e7eb]">
         <div>

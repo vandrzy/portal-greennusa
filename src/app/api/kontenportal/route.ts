@@ -112,6 +112,29 @@ async function handleUpdateContent(request: NextRequest) {
       );
     }
 
+    // 4. Validasi Limit Karakter Tulisan Bagian Depan Folder Kategori
+    // Input 1: maksimal 20 karakter
+    if (folder1Title.length > 20 || folder2Title.length > 20) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Judul folder kategori (Input 1) maksimal 20 karakter',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Input 2: maksimal 40 karakter
+    if (folder1Subtitle.length > 40 || folder2Subtitle.length > 40) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Sub-judul folder kategori (Input 2) maksimal 40 karakter',
+        },
+        { status: 400 }
+      );
+    }
+
     // 4. Jika ada file logo baru yang diunggah, simpan ke disk terlebih dahulu
     if (logoFile) {
       newLogoUrl = await saveLogoFile(logoFile);

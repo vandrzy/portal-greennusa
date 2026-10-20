@@ -142,6 +142,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    if (title.trim().length > 30) {
+      return NextResponse.json(
+        { success: false, message: 'Nama aplikasi maksimal 30 karakter' },
+        { status: 400 }
+      );
+    }
+
+    if (description.trim().length > 200) {
+      return NextResponse.json(
+        { success: false, message: 'Deskripsi aplikasi maksimal 200 karakter' },
+        { status: 400 }
+      );
+    }
+
     const normCategory = category.toLowerCase().trim();
     const targetCategory = (normCategory === 'pemerintah' ? 'pemerintahan' : normCategory) as AppCategory;
 

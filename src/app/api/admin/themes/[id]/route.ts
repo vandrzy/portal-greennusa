@@ -42,6 +42,13 @@ export async function PUT(
       );
     }
 
+    if (name.length > 20) {
+      return NextResponse.json(
+        { error: 'Nama tema maksimal 20 karakter' },
+        { status: 400 }
+      );
+    }
+
     let bgImagePath = existingTheme.bgImage;
 
     // Jika ada upload gambar baru: hapus gambar lama dulu, baru simpan gambar baru

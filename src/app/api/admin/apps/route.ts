@@ -154,6 +154,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (title.trim().length > 30) {
+      return NextResponse.json(
+        { success: false, message: 'Nama aplikasi maksimal 30 karakter' },
+        { status: 400 }
+      );
+    }
+
+    if (description.trim().length > 200) {
+      return NextResponse.json(
+        { success: false, message: 'Deskripsi aplikasi maksimal 200 karakter' },
+        { status: 400 }
+      );
+    }
+
     const normCategory = category.toLowerCase().trim();
     if (normCategory !== 'pemerintahan' && normCategory !== 'pemerintah' && normCategory !== 'swasta') {
       return NextResponse.json(

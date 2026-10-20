@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AdminAppsProvider } from '@/context/AdminAppsContext';
+import { ToastProvider } from '@/context/ToastContext';
 
 export default function AdminLayout({
   children,
@@ -108,7 +109,8 @@ export default function AdminLayout({
 
   return (
     <AdminAppsProvider>
-      <div className="min-h-screen md:h-screen md:overflow-hidden bg-[#f0f2f5] font-body text-[#111b21] flex flex-col md:flex-row">
+      <ToastProvider>
+        <div className="min-h-screen md:h-screen md:overflow-hidden bg-[#f0f2f5] font-body text-[#111b21] flex flex-col md:flex-row">
         {/* DESKTOP SIDEBAR - Strictly 100vh Height & Sticky */}
         <aside className="hidden md:flex md:w-64 lg:w-72 flex-col bg-white border-r border-[#d8e0e5] shadow-sm z-30 shrink-0 h-screen max-h-screen sticky top-0">
           {/* Logo Brand Header */}
@@ -316,7 +318,8 @@ export default function AdminLayout({
         <main className="flex-1 min-w-0 flex flex-col overflow-y-auto md:h-screen custom-scrollbar">
           {children}
         </main>
-      </div>
+        </div>
+      </ToastProvider>
     </AdminAppsProvider>
   );
 }

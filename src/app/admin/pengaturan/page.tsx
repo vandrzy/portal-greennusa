@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/context/ToastContext';
 
 interface AdminProfile {
   id: string;
@@ -15,6 +16,7 @@ interface AdminProfile {
 
 export default function AdminPengaturanPage() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState<boolean>(true);
@@ -27,8 +29,6 @@ export default function AdminPengaturanPage() {
 
   // Status State
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 1. Fetch profil admin saat halaman pertama kali dibuka
   useEffect(() => {
@@ -68,27 +68,25 @@ export default function AdminPengaturanPage() {
   // 2. Handle Submit Reset Password
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     // Validasi Sisi Klien
     if (!newPassword.trim()) {
-      setErrorMessage('Password baru tidak boleh kosong');
+      showToast('error', 'Password baru tidak boleh kosong');
       return;
     }
 
     if (newPassword.length < 6) {
-      setErrorMessage('Password baru minimal harus 6 karakter');
+      showToast('error', 'Password baru minimal harus 6 karakter');
       return;
     }
 
     if (!confirmPassword.trim()) {
-      setErrorMessage('Konfirmasi password baru tidak boleh kosong');
+      showToast('error', 'Konfirmasi password baru tidak boleh kosong');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage('Konfirmasi password tidak cocok dengan password baru');
+      showToast('error', 'Konfirmasi password tidak cocok dengan password baru');
       return;
     }
 
@@ -114,15 +112,15 @@ export default function AdminPengaturanPage() {
       const json = await res.json().catch(() => null);
 
       if (res.ok && json?.success) {
-        setSuccessMessage(json.message || 'Password admin berhasil diperbarui');
+        showToast('success', json.message || 'Password admin berhasil diperbarui');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setErrorMessage(json?.message || 'Gagal mengubah password admin');
+        showToast('error', json?.message || 'Gagal mengubah password admin');
       }
     } catch (err) {
       console.error('Gagal mengirim request reset password:', err);
-      setErrorMessage('Terjadi kesalahan koneksi saat menghubungi server');
+      showToast('error', 'Terjadi kesalahan koneksi saat menghubungi server');
     } finally {
       setIsSaving(false);
     }
@@ -157,53 +155,6 @@ export default function AdminPengaturanPage() {
 
       {/* Konten Halaman */}
       <div className="py-6 max-w-3xl flex flex-col gap-6">
-        {/* Notifikasi Sukses */}
-        {successMessage && (
-          <div className="p-4 rounded-2xl bg-[#e6f7ef] border border-[#bce8d4] text-[#075e54] flex items-start gap-3 shadow-sm animate-fade-in">
-            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="flex-1">
-              <span className="font-headline font-bold text-sm block">Berhasil!</span>
-              <p className="text-xs text-[#075e54]/90 mt-0.5">{successMessage}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSuccessMessage(null)}
-              className="text-[#075e54] hover:text-[#064e46] text-sm font-bold p-1"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Notifikasi Error */}
-        {errorMessage && (
-          <div className="p-4 rounded-2xl bg-[#fee2e2]/70 border border-[#fca5a5] text-[#991b1b] flex items-start gap-3 shadow-sm animate-fade-in">
-            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="flex-1">
-              <span className="font-headline font-bold text-sm block">Gagal!</span>
-              <p className="text-xs text-[#991b1b]/90 mt-0.5">{errorMessage}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setErrorMessage(null)}
-              className="text-[#991b1b] hover:text-[#7f1d1d] text-sm font-bold p-1"
-            >
-              ✕
-            </button>
-          </div>
-        )}
 
         {/* Card Profil Singkat Admin */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#d8e0e5] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

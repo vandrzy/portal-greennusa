@@ -131,6 +131,11 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
       return;
     }
 
+    if (name.trim().length > 20) {
+      setErrorMessage('Nama tema maksimal 20 karakter');
+      return;
+    }
+
     if (!isEditMode && !selectedFile) {
       setErrorMessage('Gambar background wajib diunggah');
       return;
@@ -223,13 +228,19 @@ export const ThemeFormModal: React.FC<ThemeFormModalProps> = ({
 
           {/* INPUT 1: NAMA TEMA */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="themeNameInput" className="text-xs font-headline font-bold text-[#111b21] uppercase tracking-wider">
-              Nama Tema <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="themeNameInput" className="text-xs font-headline font-bold text-[#111b21] uppercase tracking-wider">
+                Nama Tema <span className="text-red-500">*</span>
+              </label>
+              <span className={`text-[11px] font-mono ${name.length > 20 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                {name.length}/20
+              </span>
+            </div>
             <input
               id="themeNameInput"
               type="text"
               required
+              maxLength={20}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Modern Green, tema-ramadhan..."

@@ -66,6 +66,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (name.length > 20) {
+      return NextResponse.json(
+        { error: 'Nama tema maksimal 20 karakter' },
+        { status: 400 }
+      );
+    }
+
     if (!bgFile || bgFile.size === 0) {
       return NextResponse.json(
         { error: 'Gambar background wajib diunggah' },

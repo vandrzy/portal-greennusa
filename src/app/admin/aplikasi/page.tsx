@@ -5,10 +5,12 @@ import { useAdminApps } from '@/context/AdminAppsContext';
 import { EcosystemAppItem, CategoryType } from '@/types';
 import { AppFormModal } from '@/components/modal/AppFormModal';
 import { LocalIconImage } from '@/components/common/LocalIconImage';
+import { useToast } from '@/context/ToastContext';
 
 const PAGE_SIZE = 6;
 
 export default function AdminAplikasiPage() {
+  const { showToast } = useToast();
   const {
     apps,
     pagination,
@@ -103,11 +105,20 @@ export default function AdminAplikasiPage() {
     removeAppImage?: boolean;
   }) => {
     if (selectedApp) {
-      return await updateApp(selectedApp.id, data);
+      const res = await updateApp(selectedApp.id, data);
+      if (res && res.success) {
+        showToast('success', 'Aplikasi berhasil diperbarui!');
+      } else {
+        showToast('error', res?.message || 'Gagal memperbarui aplikasi');
+      }
+      return res;
     } else {
       const res = await addApp(data);
-      if (res.success) {
+      if (res && res.success) {
         setCurrentPage(1);
+        showToast('success', 'Aplikasi baru berhasil ditambahkan!');
+      } else {
+        showToast('error', res?.message || 'Gagal menambahkan aplikasi');
       }
       return res;
     }
@@ -118,9 +129,14 @@ export default function AdminAplikasiPage() {
     setIsDeleting(true);
     try {
       const res = await deleteApp(appToDelete.id);
-      if (res && res.success === false) {
-        alert(res.message || 'Gagal menghapus aplikasi');
+      if (res && res.success) {
+        showToast('success', 'Aplikasi berhasil dihapus!');
+      } else {
+        showToast('error', res?.message || 'Gagal menghapus aplikasi');
       }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus aplikasi';
+      showToast('error', errorMsg);
     } finally {
       setIsDeleting(false);
       setAppToDelete(null);

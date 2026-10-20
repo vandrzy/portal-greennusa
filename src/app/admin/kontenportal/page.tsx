@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/context/ToastContext';
 
 export default function AdminKontenPortalPage() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   // State Management terhubung ke Backend API (/api/kontenportal)
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -21,8 +23,6 @@ export default function AdminKontenPortalPage() {
   const [whatsappLink, setWhatsappLink] = useState<string>('');
 
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +32,6 @@ export default function AdminKontenPortalPage() {
 
     async function loadPortalContent() {
       setIsLoading(true);
-      setErrorMessage(null);
       try {
         const res = await fetch('/api/kontenportal', { cache: 'no-store' });
         if (res.status === 401) {
@@ -58,13 +57,13 @@ export default function AdminKontenPortalPage() {
         } else {
           const json = await res.json().catch(() => null);
           if (isMounted && json?.message) {
-            setErrorMessage(json.message);
+            showToast('error', json.message);
           }
         }
       } catch (err: any) {
         console.error('Gagal mengambil konten portal dari API:', err);
         if (isMounted) {
-          setErrorMessage('Gagal menghubungi server untuk memuat data konten portal');
+          showToast('error', 'Gagal menghubungi server untuk memuat data konten portal');
         }
       } finally {
         if (isMounted) {
@@ -78,7 +77,7 @@ export default function AdminKontenPortalPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [router, showToast]);
 
   // Handle Logo Upload with local preview
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,9 +101,18 @@ export default function AdminKontenPortalPage() {
   // 2. Handle Form Submit (Simpan ke Backend API PUT /api/kontenportal)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validasi Limit Karakter Tulisan Bagian Depan Folder Kategori
+    if (folder1Title.length > 20 || folder2Title.length > 20) {
+      showToast('error', 'Judul folder kategori (Input 1) maksimal 20 karakter');
+      return;
+    }
+    if (folder1Subtitle.length > 40 || folder2Subtitle.length > 40) {
+      showToast('error', 'Sub-judul folder kategori (Input 2) maksimal 40 karakter');
+      return;
+    }
+
     setIsSaving(true);
-    setSaveSuccess(false);
-    setErrorMessage(null);
 
     try {
       const formData = new FormData();
@@ -140,16 +148,13 @@ export default function AdminKontenPortalPage() {
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        setSaveSuccess(true);
-        setTimeout(() => {
-          setSaveSuccess(false);
-        }, 3500);
+        showToast('success', 'Perubahan konten portal berhasil disimpan!');
       } else {
-        setErrorMessage(json.message || 'Gagal menyimpan perubahan konten portal');
+        showToast('error', json.message || 'Gagal menyimpan perubahan konten portal');
       }
     } catch (err: any) {
       console.error('Error saat menyimpan konten portal:', err);
-      setErrorMessage(err?.message || 'Terjadi kesalahan jaringan saat menyimpan konten portal');
+      showToast('error', err?.message || 'Terjadi kesalahan jaringan saat menyimpan konten portal');
     } finally {
       setIsSaving(false);
     }
@@ -183,38 +188,6 @@ export default function AdminKontenPortalPage() {
           </p>
         </div>
       </div>
-
-      {/* NOTIFIKASI ERROR JIKA ADA */}
-      {errorMessage && (
-        <div
-          role="alert"
-          className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 shadow-sm animate-fade-in transition-all"
-        >
-          <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 font-bold">
-            !
-          </div>
-          <div className="flex-1 text-sm font-headline font-semibold">
-            {errorMessage}
-          </div>
-        </div>
-      )}
-
-      {/* NOTIFIKASI SUKSES (Banner Muncul Saat Simpan Berhasil) */}
-      {saveSuccess && (
-        <div
-          role="alert"
-          className="flex items-center gap-3 p-4 rounded-2xl bg-[#e6f7ef] border border-[#25d366] text-[#075e54] shadow-sm animate-fade-in transition-all"
-        >
-          <div className="w-8 h-8 rounded-full bg-[#25d366] text-white flex items-center justify-center shrink-0 font-bold">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div className="flex-1 text-sm font-headline font-semibold">
-            Perubahan konten portal berhasil disimpan! (Tersimpan pada konfigurasi aktif)
-          </div>
-        </div>
-      )}
 
       {/* MAIN FORM */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -404,36 +377,48 @@ export default function AdminKontenPortalPage() {
 
               {/* Input 1: Judul Utama Folder 1 */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="folder1TitleInput" className="text-xs font-headline font-bold text-[#111b21]">
-                  Input 1: Judul / Label Utama Folder 1 <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="folder1TitleInput" className="text-xs font-headline font-bold text-[#111b21]">
+                    Input 1: Judul / Label Utama Folder 1 <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${folder1Title.length > 20 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {folder1Title.length}/20
+                  </span>
+                </div>
                 <input
                   id="folder1TitleInput"
                   type="text"
                   required
+                  maxLength={20}
                   value={folder1Title}
                   onChange={(e) => setFolder1Title(e.target.value)}
                   placeholder="Contoh: Pemerintahan"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-sm font-headline text-[#111b21] focus:outline-none focus:ring-2 focus:ring-[#075e54] transition-all"
                 />
-                <p className="text-[11px] text-[#64748b]">Teks besar di bagian depan kartu folder 1.</p>
+                <p className="text-[11px] text-[#64748b]">Teks besar di bagian depan kartu folder 1 (maksimal 20 karakter).</p>
               </div>
 
               {/* Input 2: Sub-judul / Keterangan Folder 1 */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="folder1SubtitleInput" className="text-xs font-headline font-bold text-[#111b21]">
-                  Input 2: Sub-judul / Label Atas Folder 1 <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="folder1SubtitleInput" className="text-xs font-headline font-bold text-[#111b21]">
+                    Input 2: Sub-judul / Label Atas Folder 1 <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${folder1Subtitle.length > 40 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {folder1Subtitle.length}/40
+                  </span>
+                </div>
                 <input
                   id="folder1SubtitleInput"
                   type="text"
                   required
+                  maxLength={40}
                   value={folder1Subtitle}
                   onChange={(e) => setFolder1Subtitle(e.target.value)}
                   placeholder="Contoh: EKOSISTEM APLIKASI"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-sm font-headline text-[#111b21] focus:outline-none focus:ring-2 focus:ring-[#075e54] transition-all"
                 />
-                <p className="text-[11px] text-[#64748b]">Label kecil huruf kapital di atas judul folder 1.</p>
+                <p className="text-[11px] text-[#64748b]">Label kecil huruf kapital di atas judul folder 1 (maksimal 40 karakter).</p>
               </div>
             </div>
 
@@ -453,36 +438,48 @@ export default function AdminKontenPortalPage() {
 
               {/* Input 1: Judul Utama Folder 2 */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="folder2TitleInput" className="text-xs font-headline font-bold text-[#111b21]">
-                  Input 1: Judul / Label Utama Folder 2 <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="folder2TitleInput" className="text-xs font-headline font-bold text-[#111b21]">
+                    Input 1: Judul / Label Utama Folder 2 <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${folder2Title.length > 20 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {folder2Title.length}/20
+                  </span>
+                </div>
                 <input
                   id="folder2TitleInput"
                   type="text"
                   required
+                  maxLength={20}
                   value={folder2Title}
                   onChange={(e) => setFolder2Title(e.target.value)}
                   placeholder="Contoh: Swasta"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-sm font-headline text-[#111b21] focus:outline-none focus:ring-2 focus:ring-[#075e54] transition-all"
                 />
-                <p className="text-[11px] text-[#64748b]">Teks besar di bagian depan kartu folder 2.</p>
+                <p className="text-[11px] text-[#64748b]">Teks besar di bagian depan kartu folder 2 (maksimal 20 karakter).</p>
               </div>
 
               {/* Input 2: Sub-judul / Keterangan Folder 2 */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="folder2SubtitleInput" className="text-xs font-headline font-bold text-[#111b21]">
-                  Input 2: Sub-judul / Label Atas Folder 2 <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="folder2SubtitleInput" className="text-xs font-headline font-bold text-[#111b21]">
+                    Input 2: Sub-judul / Label Atas Folder 2 <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${folder2Subtitle.length > 40 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {folder2Subtitle.length}/40
+                  </span>
+                </div>
                 <input
                   id="folder2SubtitleInput"
                   type="text"
                   required
+                  maxLength={40}
                   value={folder2Subtitle}
                   onChange={(e) => setFolder2Subtitle(e.target.value)}
                   placeholder="Contoh: EKOSISTEM APLIKASI"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-sm font-headline text-[#111b21] focus:outline-none focus:ring-2 focus:ring-[#075e54] transition-all"
                 />
-                <p className="text-[11px] text-[#64748b]">Label kecil huruf kapital di atas judul folder 2.</p>
+                <p className="text-[11px] text-[#64748b]">Label kecil huruf kapital di atas judul folder 2 (maksimal 40 karakter).</p>
               </div>
             </div>
           </div>
