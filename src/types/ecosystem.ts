@@ -1,17 +1,40 @@
-export type CategoryType = 'pemerintahan' | 'swasta';
-export type FolderCategory = CategoryType;
+export type EcosystemCategoryId = 'pemerintahan' | 'swasta';
 
-export interface EcosystemAppItem {
+// Aliases untuk kompatibilitas ke belakang dengan komponen lama
+export type CategoryType = EcosystemCategoryId;
+export type FolderCategory = EcosystemCategoryId;
+
+export interface EcosystemApp {
   id: string;
-  title: string;
-  description: string;
-  url: string;
-  category: CategoryType;
-  iconPath: string;
-  appImage?: string | null;
+  name: string;               // Nama aplikasi (ditampilkan di bawah icon)
+  title: string;              // Judul lengkap aplikasi (ditampilkan di modal)
+  appType: string;            // Jenis aplikasi (badge di atas judul pada modal)
+  tagline: string;            // Tagline aplikasi (ditampilkan di modal)
+  features: string[];         // Keunggulan aplikasi (maksimal 4 item)
+  category: EcosystemCategoryId;
+  description: string;        // Deskripsi aplikasi
+  icon: string;               // URL / nama file icon aplikasi
+  url: string;                // URL tujuan saat aplikasi diklik
+  appImage?: string | null;   // Opsional (legacy compatibility)
+  iconPath?: string;          // Opsional (legacy compatibility)
 }
 
-export type EcosystemApp = EcosystemAppItem;
+// Alias untuk kompatibilitas ke belakang
+export type EcosystemAppItem = EcosystemApp;
+
+export interface AppOrbitPosition {
+  x: number;
+  y: number;
+}
+
+export interface PortalFolderConfig {
+  id: EcosystemCategoryId;
+  title: string;
+  subtitle: string;
+  color: string;
+  tabColor: string;
+  glowColor: string;
+}
 
 export interface ThemeItem {
   id: string;
@@ -37,4 +60,5 @@ export interface PortalContentData {
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }
+
 

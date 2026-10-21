@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { AbstractParticleBackground } from '@/components/layout/AbstractParticleBackground';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,7 +56,14 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#f0f2f5] font-body selection:bg-[#e9edf0] selection:text-[#25d366]">
       {/* Background with Ambient Mesh & Floating Blobs */}
-      <AbstractParticleBackground />
+      <div aria-hidden="true" className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/assets/backgroundTheme/default.png')",
+          }}
+        />
+      </div>
 
       {/* Main Centered Login Card */}
       <div className="relative z-10 w-full max-w-[460px] bg-white/95 backdrop-blur-md rounded-[28px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.18)] p-6 sm:p-8 flex flex-col transition-all duration-300">

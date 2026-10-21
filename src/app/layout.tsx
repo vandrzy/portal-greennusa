@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import '../index.css';
-import '../styles/portalAnimations.css';
 
 export const metadata: Metadata = {
   title: 'Portal Ekosistem GreenNusa Computindo',

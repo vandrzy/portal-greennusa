@@ -5,9 +5,7 @@ import {
   saveIconFile,
   deleteOldIconFile,
   copyIconToCategory,
-  saveAppImageFile,
   deleteAppImageFile,
-  validateAppImageFile,
   INVALID_IMAGE_ERROR_MESSAGE,
 } from '@/lib/iconStorage';
 import { AppCategory } from '@prisma/client';
@@ -18,6 +16,39 @@ interface RouteParams {
   params: {
     id: string;
   };
+}
+
+const parseFeatures = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      if (raw.trim()) {
+        return [raw.trim()];
+      }
+      return [];
+    }
+  }
+  return [];
+};
+
+async function findApplication(idParam: string) {
+  const numId = parseInt(idParam, 10);
+  if (!isNaN(numId)) {
+    const byId = await prisma.application.findUnique({
+      where: { id: numId },
+    });
+    if (byId) return byId;
+  }
+  return prisma.application.findUnique({
+    where: { slug: idParam },
+  });
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -31,9 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = params;
-    const app = await prisma.app.findUnique({
-      where: { id },
-    });
+    const app = await findApplication(id);
 
     if (!app) {
       return NextResponse.json(
@@ -46,16 +75,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       {
         success: true,
         data: {
-          id: app.id,
-          title: app.title,
-          name: app.title,
+          id: String(app.id),
+          dbId: app.id,
+          slug: app.slug,
+          title: app.title || app.name,
+          name: app.name,
+          appType: app.appType || '',
+          tagline: app.tagline || '',
+          features: parseFeatures(app.features).slice(0, 4),
           description: app.description,
           url: app.url,
           category: app.category,
-          iconPath: app.iconPath.startsWith('/api/icon')
-            ? app.iconPath
-            : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
-          rawIconPath: app.iconPath,
+          icon: app.iconUrl,
+          iconPath: app.iconUrl.startsWith('/api/icon')
+            ? app.iconUrl
+            : `/api/icon?path=${encodeURIComponent(app.iconUrl)}`,
+          rawIconPath: app.iconUrl,
           appImage: app.appImage ?? null,
           rawAppImage: app.appImage ?? null,
           createdAt: app.createdAt,
@@ -76,8 +111,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   let newUploadedIconPath: string | null = null;
   let isNewIconCreated = false;
-  let newUploadedAppImagePath: string | null = null;
-  let isNewAppImageCreated = false;
 
   try {
     const session = await getAuthSessionFromRequest(request);
@@ -91,9 +124,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id } = params;
 
     // 1. Cek aplikasi lama di database
-    const existingApp = await prisma.app.findUnique({
-      where: { id },
-    });
+    const existingApp = await findApplication(id);
 
     if (!existingApp) {
       return NextResponse.json(
@@ -105,63 +136,93 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // 2. Baca payload update
     const contentType = request.headers.get('content-type') || '';
     let title = existingApp.title;
+    let name = existingApp.name;
+    let appType = existingApp.appType;
+    let tagline = existingApp.tagline;
     let description = existingApp.description;
     let url = existingApp.url;
     let category = existingApp.category;
+    let featuresRaw: unknown = existingApp.features;
     let iconInput: File | string | null = null;
-    let appImageInput: File | string | null = null;
-    let removeAppImage = false;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
-      if (formData.has('title')) title = (formData.get('title') as string) || title;
-      if (formData.has('name')) title = (formData.get('name') as string) || title;
-      if (formData.has('description')) description = (formData.get('description') as string) || description;
-      if (formData.has('url')) url = (formData.get('url') as string) || url;
-      if (formData.has('category')) category = (formData.get('category') as AppCategory) || category;
+      if (formData.has('title')) title = String(formData.get('title') ?? '').trim() || title;
+      if (formData.has('name')) name = String(formData.get('name') ?? '').trim() || name;
+      if (formData.has('appType')) appType = String(formData.get('appType') ?? '').trim() || appType;
+      if (formData.has('tagline')) tagline = String(formData.get('tagline') ?? '').trim() || tagline;
+      if (formData.has('description')) description = String(formData.get('description') ?? '').trim() || description;
+      if (formData.has('url')) url = String(formData.get('url') ?? '').trim() || url;
+      if (formData.has('category')) category = (String(formData.get('category') ?? '').trim() as AppCategory) || category;
+      if (formData.has('features')) featuresRaw = formData.get('features');
       if (formData.has('icon')) iconInput = formData.get('icon') as File | string | null;
-      if (formData.has('appImageFile')) appImageInput = formData.get('appImageFile') as File | string | null;
-      else if (formData.has('appImage')) appImageInput = formData.get('appImage') as File | string | null;
-      if (formData.has('removeAppImage')) removeAppImage = formData.get('removeAppImage') === 'true';
     } else {
       const body = await request.json().catch(() => ({}));
-      if (body.title || body.name) title = body.title || body.name;
-      if (body.description) description = body.description;
-      if (body.url) url = body.url;
+      if (body.title) title = String(body.title).trim();
+      if (body.name) name = String(body.name).trim();
+      if (body.appType) appType = String(body.appType).trim();
+      if (body.tagline) tagline = String(body.tagline).trim();
+      if (body.description) description = String(body.description).trim();
+      if (body.url) url = String(body.url).trim();
       if (body.category) category = body.category;
+      if (body.features !== undefined) featuresRaw = body.features;
       if (body.icon) iconInput = body.icon;
-      if (body.appImageFile) appImageInput = body.appImageFile;
-      else if (body.appImage) appImageInput = body.appImage;
-      if (body.removeAppImage) removeAppImage = Boolean(body.removeAppImage);
     }
 
-    if (!title.trim() || !description.trim() || !url.trim()) {
+    // Fallback name <-> title
+    if (!name && title) name = title;
+    if (!title && name) title = name;
+
+    if (!title || !name || !appType || !tagline || !description || !url) {
       return NextResponse.json(
-        { success: false, message: 'Nama aplikasi, deskripsi, dan URL wajib diisi' },
+        { success: false, message: 'Judul, nama, jenis aplikasi, tagline, deskripsi, dan URL wajib diisi' },
         { status: 400 }
       );
     }
 
-    if (title.trim().length > 30) {
+    if (title.length > 255) {
       return NextResponse.json(
-        { success: false, message: 'Nama aplikasi maksimal 30 karakter' },
+        { success: false, message: 'Judul aplikasi maksimal 255 karakter' },
         { status: 400 }
       );
     }
 
-    if (description.trim().length > 200) {
+    if (name.length > 150) {
       return NextResponse.json(
-        { success: false, message: 'Deskripsi aplikasi maksimal 200 karakter' },
+        { success: false, message: 'Nama aplikasi maksimal 150 karakter' },
         { status: 400 }
       );
     }
 
-    const normCategory = category.toLowerCase().trim();
+    if (appType.length > 150) {
+      return NextResponse.json(
+        { success: false, message: 'Jenis aplikasi maksimal 150 karakter' },
+        { status: 400 }
+      );
+    }
+
+    if (tagline.length > 255) {
+      return NextResponse.json(
+        { success: false, message: 'Tagline aplikasi maksimal 255 karakter' },
+        { status: 400 }
+      );
+    }
+
+    const normCategory = String(category).toLowerCase().trim();
     const targetCategory = (normCategory === 'pemerintah' ? 'pemerintahan' : normCategory) as AppCategory;
 
+    // Validasi Keunggulan (Maksimal 4 item)
+    const cleanedFeatures = parseFeatures(featuresRaw);
+    if (cleanedFeatures.length > 4) {
+      return NextResponse.json(
+        { success: false, message: 'Keunggulan aplikasi maksimal 4 poin.' },
+        { status: 400 }
+      );
+    }
+
     // 3. Manajemen file icon
-    let finalIconPath = existingApp.iconPath;
-    const oldIconPath = existingApp.iconPath;
+    let finalIconPath = existingApp.iconUrl;
+    const oldIconPath = existingApp.iconUrl;
 
     const hasNewUploadedIcon = Boolean(
       iconInput &&
@@ -184,7 +245,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           { status: 400 }
         );
       }
-    } else if (targetCategory !== existingApp.category) {
+    } else if (targetCategory !== existingApp.category && oldIconPath) {
       try {
         const copied = await copyIconToCategory(oldIconPath, targetCategory);
         finalIconPath = copied.relativePath;
@@ -195,67 +256,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // 4. Manajemen file gambar aplikasi (appImage)
-    let finalAppImagePath = existingApp.appImage;
-    const oldAppImagePath = existingApp.appImage;
-
-    const hasNewUploadedAppImage = Boolean(
-      appImageInput &&
-      (
-        (typeof appImageInput === 'object' && 'size' in appImageInput && (appImageInput as { size: number }).size > 0) ||
-        (typeof appImageInput === 'string' && appImageInput.startsWith('data:'))
-      )
-    );
-
-    if (hasNewUploadedAppImage && appImageInput) {
-      if (typeof appImageInput === 'object' && 'size' in appImageInput) {
-        const imgError = validateAppImageFile(appImageInput as File);
-        if (imgError) {
-          if (isNewIconCreated && newUploadedIconPath) await deleteOldIconFile(newUploadedIconPath);
-          return NextResponse.json({ success: false, message: imgError }, { status: 400 });
-        }
-      }
-      try {
-        const saved = await saveAppImageFile(appImageInput!, targetCategory);
-        finalAppImagePath = saved;
-        newUploadedAppImagePath = saved;
-        isNewAppImageCreated = true;
-      } catch (imgSaveErr: unknown) {
-        const err = imgSaveErr as Error;
-        if (isNewIconCreated && newUploadedIconPath) await deleteOldIconFile(newUploadedIconPath);
-        return NextResponse.json(
-          { success: false, message: err.message || 'Gagal menyimpan gambar aplikasi' },
-          { status: 400 }
-        );
-      }
-    } else if (removeAppImage) {
-      finalAppImagePath = null;
-    }
-
-    // 5. Jalankan transaksi database (Prisma Transaction)
+    // 4. Jalankan transaksi database (Prisma Transaction)
     let updatedApp;
     try {
       updatedApp = await prisma.$transaction(async (tx) => {
-        return tx.app.update({
-          where: { id },
+        return tx.application.update({
+          where: { id: existingApp.id },
           data: {
-            title: title.trim(),
-            description: description.trim(),
-            url: url.trim(),
+            title,
+            name,
+            appType,
+            tagline,
+            features: cleanedFeatures,
             category: targetCategory,
-            iconPath: finalIconPath,
-            appImage: finalAppImagePath,
+            description,
+            iconUrl: finalIconPath,
+            appImage: null,
+            url,
           },
         });
       });
     } catch (txError) {
       console.error('Transaksi database gagal saat update aplikasi:', txError);
-      // ROLLBACK: Hapus file fisik baru jika database gagal update
       if (isNewIconCreated && newUploadedIconPath) {
         await deleteOldIconFile(newUploadedIconPath);
-      }
-      if (isNewAppImageCreated && newUploadedAppImagePath) {
-        await deleteAppImageFile(newUploadedAppImagePath);
       }
       return NextResponse.json(
         { success: false, message: 'Gagal memperbarui aplikasi di database. Operasi dibatalkan.' },
@@ -263,25 +287,31 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 6. Transaksi database SUKSES -> Hapus file lama yang diganti/dihapus
+    // 5. Transaksi database SUKSES -> Hapus file lama yang diganti
     if (isNewIconCreated && oldIconPath && oldIconPath !== finalIconPath) {
       await deleteOldIconFile(oldIconPath);
     }
-    if ((isNewAppImageCreated || removeAppImage) && oldAppImagePath && oldAppImagePath !== finalAppImagePath) {
-      await deleteAppImageFile(oldAppImagePath);
+    if (existingApp.appImage) {
+      await deleteAppImageFile(existingApp.appImage);
     }
 
     const formattedUpdated = {
-      id: updatedApp.id,
+      id: String(updatedApp.id),
+      dbId: updatedApp.id,
+      slug: updatedApp.slug,
       title: updatedApp.title,
-      name: updatedApp.title,
+      name: updatedApp.name,
+      appType: updatedApp.appType,
+      tagline: updatedApp.tagline,
+      features: parseFeatures(updatedApp.features),
+      category: updatedApp.category,
       description: updatedApp.description,
       url: updatedApp.url,
-      category: updatedApp.category,
-      iconPath: `/api/icon?path=${encodeURIComponent(updatedApp.iconPath)}`,
-      rawIconPath: updatedApp.iconPath,
-      appImage: updatedApp.appImage ?? null,
-      rawAppImage: updatedApp.appImage ?? null,
+      icon: updatedApp.iconUrl,
+      iconPath: `/api/icon?path=${encodeURIComponent(updatedApp.iconUrl)}`,
+      rawIconPath: updatedApp.iconUrl,
+      appImage: null,
+      rawAppImage: null,
       createdAt: updatedApp.createdAt,
       updatedAt: updatedApp.updatedAt,
     };
@@ -298,9 +328,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error('Error in PUT /api/admin/apps/[id]:', error);
     if (isNewIconCreated && newUploadedIconPath) {
       await deleteOldIconFile(newUploadedIconPath);
-    }
-    if (isNewAppImageCreated && newUploadedAppImagePath) {
-      await deleteAppImageFile(newUploadedAppImagePath);
     }
     return NextResponse.json(
       { success: false, message: 'Terjadi kesalahan pada server saat memperbarui aplikasi' },
@@ -328,16 +355,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     let deletedRecord;
     try {
       deletedRecord = await prisma.$transaction(async (tx) => {
-        const existing = await tx.app.findUnique({
-          where: { id },
-        });
+        const existing = await findApplication(id);
 
         if (!existing) {
           throw new Error('NOT_FOUND');
         }
 
-        await tx.app.delete({
-          where: { id },
+        await tx.application.delete({
+          where: { id: existing.id },
         });
 
         return existing;
@@ -359,8 +384,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // 2. Penghapusan file fisik icon dan gambar aplikasi lama setelah transaksi DB sukses
-    if (deletedRecord && deletedRecord.iconPath) {
-      await deleteOldIconFile(deletedRecord.iconPath);
+    if (deletedRecord && deletedRecord.iconUrl) {
+      await deleteOldIconFile(deletedRecord.iconUrl);
     }
     if (deletedRecord && deletedRecord.appImage) {
       await deleteAppImageFile(deletedRecord.appImage);

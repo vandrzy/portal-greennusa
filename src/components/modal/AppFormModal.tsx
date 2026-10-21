@@ -10,14 +10,16 @@ export interface AppFormModalProps {
   onClose: () => void;
   onSave: (appData: {
     title: string;
+    name: string;
+    appType: string;
+    tagline: string;
+    features: string[];
     description: string;
     url: string;
     category: CategoryType;
     iconFile?: File | null;
     iconPath?: string;
     appImage?: string | null;
-    appImageFile?: File | null;
-    removeAppImage?: boolean;
   }) => Promise<{ success: boolean; message?: string } | void> | void;
   initialData?: EcosystemAppItem | null;
 }
@@ -41,19 +43,19 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
   const isEditMode = Boolean(initialData);
 
   const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
+  const [appType, setAppType] = useState('');
+  const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
   const [category, setCategory] = useState<CategoryType>('pemerintahan');
+  const [features, setFeatures] = useState<string[]>(['']);
   const [iconPreview, setIconPreview] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [appImagePreview, setAppImagePreview] = useState<string>('');
-  const [appImageFile, setAppImageFile] = useState<File | null>(null);
-  const [removeAppImage, setRemoveAppImage] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const appImageInputRef = useRef<HTMLInputElement>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync form state when modal opens or initialData changes
@@ -62,26 +64,33 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('');
       setIsSubmitting(false);
       setSelectedFile(null);
-      setAppImageFile(null);
-      setRemoveAppImage(false);
 
       if (fileInputRef.current) fileInputRef.current.value = '';
-      if (appImageInputRef.current) appImageInputRef.current.value = '';
 
       if (initialData) {
-        setTitle(initialData.title || '');
+        setTitle(initialData.title || initialData.name || '');
+        setName(initialData.name || initialData.title || '');
+        setAppType(initialData.appType || '');
+        setTagline(initialData.tagline || '');
         setDescription(initialData.description || '');
         setUrl(initialData.url || '');
         setCategory(initialData.category || 'pemerintahan');
-        setIconPreview(initialData.iconPath || '');
-        setAppImagePreview(initialData.appImage || '');
+        setIconPreview(initialData.iconPath || initialData.icon || '');
+        setFeatures(
+          Array.isArray(initialData.features) && initialData.features.length > 0
+            ? [...initialData.features]
+            : ['']
+        );
       } else {
         setTitle('');
+        setName('');
+        setAppType('');
+        setTagline('');
         setDescription('');
         setUrl('');
         setCategory('pemerintahan');
         setIconPreview('');
-        setAppImagePreview('');
+        setFeatures(['']);
       }
     }
   }, [isOpen, initialData]);
@@ -103,7 +112,6 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Strict image validation
     const fileType = file.type.toLowerCase();
     const fileName = file.name.toLowerCase();
     const isValidExtension = /\.(png|jpe?g|webp|svg|gif)$/i.test(fileName);
@@ -140,45 +148,26 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     }
   };
 
-  // Handle app preview banner image upload
-  const handleAppImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileType = file.type.toLowerCase();
-    const fileName = file.name.toLowerCase();
-    const isValidExtension = /\.(png|jpe?g|webp|svg)$/i.test(fileName);
-    const isValidMime = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'].includes(fileType);
-
-    if (!isValidMime && !isValidExtension) {
-      setErrorMessage('File gambar aplikasi harus berupa gambar (PNG, JPG, JPEG, WEBP, atau SVG)');
-      if (appImageInputRef.current) appImageInputRef.current.value = '';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Ukuran gambar aplikasi maksimal 5MB');
-      if (appImageInputRef.current) appImageInputRef.current.value = '';
-      return;
-    }
-
-    setAppImageFile(file);
-    setRemoveAppImage(false);
-    setErrorMessage('');
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAppImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+  // Features item handlers
+  const handleFeatureChange = (index: number, val: string) => {
+    setFeatures((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
   };
 
-  const handleRemoveAppImage = () => {
-    setAppImageFile(null);
-    setAppImagePreview('');
-    setRemoveAppImage(true);
-    if (appImageInputRef.current) {
-      appImageInputRef.current.value = '';
+  const handleAddFeature = () => {
+    if (features.length < 4) {
+      setFeatures((prev) => [...prev, '']);
+    }
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    if (features.length > 1) {
+      setFeatures((prev) => prev.filter((_, idx) => idx !== index));
+    } else {
+      setFeatures(['']);
     }
   };
 
@@ -187,23 +176,55 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     setErrorMessage('');
 
     if (!title.trim()) {
+      setErrorMessage('Judul aplikasi wajib diisi');
+      return;
+    }
+    if (title.trim().length > 255) {
+      setErrorMessage('Judul aplikasi maksimal 255 karakter');
+      return;
+    }
+
+    const effectiveName = name.trim() || title.trim();
+    if (!effectiveName) {
       setErrorMessage('Nama aplikasi wajib diisi');
       return;
     }
-    if (title.trim().length > 30) {
-      setErrorMessage('Nama aplikasi maksimal 30 karakter');
+    if (effectiveName.length > 150) {
+      setErrorMessage('Nama aplikasi maksimal 150 karakter');
       return;
     }
+
+    if (!appType.trim()) {
+      setErrorMessage('Jenis aplikasi wajib diisi');
+      return;
+    }
+    if (appType.trim().length > 150) {
+      setErrorMessage('Jenis aplikasi maksimal 150 karakter');
+      return;
+    }
+
+    if (!tagline.trim()) {
+      setErrorMessage('Tagline aplikasi wajib diisi');
+      return;
+    }
+    if (tagline.trim().length > 255) {
+      setErrorMessage('Tagline aplikasi maksimal 255 karakter');
+      return;
+    }
+
     if (!description.trim()) {
       setErrorMessage('Deskripsi wajib diisi');
       return;
     }
-    if (description.trim().length > 200) {
-      setErrorMessage('Deskripsi aplikasi maksimal 200 karakter');
-      return;
-    }
+
     if (!url.trim()) {
       setErrorMessage('URL aplikasi wajib diisi');
+      return;
+    }
+
+    const cleanedFeatures = features.map((f) => f.trim()).filter(Boolean);
+    if (cleanedFeatures.length > 4) {
+      setErrorMessage('Keunggulan aplikasi maksimal 4 poin');
       return;
     }
 
@@ -217,14 +238,16 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     try {
       const res = await onSave({
         title: title.trim(),
+        name: effectiveName,
+        appType: appType.trim(),
+        tagline: tagline.trim(),
+        features: cleanedFeatures,
         description: description.trim(),
         url: url.trim(),
         category,
         iconFile: selectedFile,
         iconPath: iconPreview || DEFAULT_FALLBACK_ICON,
-        appImage: appImagePreview || null,
-        appImageFile,
-        removeAppImage,
+        appImage: null,
       });
 
       if (res && typeof res === 'object' && res.success === false) {
@@ -261,10 +284,10 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       >
         <div
           ref={modalContainerRef}
-          className="relative w-full max-w-xl bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.25)] p-6 sm:p-7 flex flex-col gap-5 my-auto transform transition-all duration-300"
+          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.25)] p-6 sm:p-7 flex flex-col gap-5 my-auto transform transition-all duration-300"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#e9edf0]">
+          <div className="flex items-center justify-between pb-4 border-b border-[#e9edf0] sticky top-0 bg-white z-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#e6f7ef] text-[#075e54] flex items-center justify-center font-bold">
                 {isEditMode ? (
@@ -305,7 +328,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
               onClick={onClose}
               disabled={isSubmitting}
               aria-label="Tutup form"
-              className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#111b21] flex items-center justify-center font-bold text-sm transition-colors border border-[#d1d7db] disabled:opacity-50"
+              className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#111b21] flex items-center justify-center font-bold text-sm transition-colors border border-[#d1d7db] disabled:opacity-50 cursor-pointer"
             >
               ✕
             </button>
@@ -326,75 +349,55 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Field 1: Nama Aplikasi */}
+            {/* Field 1: Judul Aplikasi (Urutan Paling Pertama) */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <label
-                  htmlFor="appName"
+                  htmlFor="appTitle"
                   className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
                 >
-                  Nama Aplikasi <span className="text-red-500">*</span>
+                  Judul Aplikasi <span className="text-red-500">*</span>
                 </label>
-                <span className={`text-[11px] font-mono ${title.length > 30 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                  {title.length}/30
+                <span className={`text-[11px] font-mono ${title.length > 255 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                  {title.length}/255
                 </span>
               </div>
               <input
-                id="appName"
+                id="appTitle"
                 type="text"
                 required
-                maxLength={30}
+                maxLength={255}
                 disabled={isSubmitting}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: DALEV BAPPERIDA, FixMate, Rajiin"
+                placeholder="Contoh: Portal Induk Dalev Bapperida / Fixmate — Manajemen Servis & Perbaikan"
                 className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
               />
             </div>
 
-            {/* Field 2: Deskripsi */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="appDescription"
-                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                >
-                  Deskripsi <span className="text-red-500">*</span>
-                </label>
-                <span className={`text-[11px] font-mono ${description.length > 200 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                  {description.length}/200
-                </span>
-              </div>
-              <textarea
-                id="appDescription"
-                required
-                maxLength={200}
-                rows={3}
-                disabled={isSubmitting}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Jelaskan fungsi utama dan manfaat aplikasi ini bagi pengguna..."
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all resize-none disabled:opacity-60"
-              />
-            </div>
-
-            {/* Field 3: URL Aplikasi & Field 4: Dropdown Kategori */}
+            {/* Field 2 & 3: Nama Aplikasi & Kategori */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="appUrl"
-                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                >
-                  URL Aplikasi <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="appName"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Nama Pendek Aplikasi <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${name.length > 150 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {name.length}/150
+                  </span>
+                </div>
                 <input
-                  id="appUrl"
+                  id="appName"
                   type="text"
                   required
+                  maxLength={150}
                   disabled={isSubmitting}
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://aplikasi.id"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: Dalev Induk, FixMate, Nusa Kasir"
                   className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
                 />
               </div>
@@ -404,7 +407,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                   htmlFor="appCategory"
                   className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
                 >
-                  Kategori <span className="text-red-500">*</span>
+                  Kategori Ekosistem <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="appCategory"
@@ -419,13 +422,167 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
               </div>
             </div>
 
-            {/* Field 5: Form Upload Icon & Preview (Gambar Khusus) */}
+            {/* Field 4 & 5: Jenis Aplikasi & Tagline */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="appType"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Jenis Aplikasi <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${appType.length > 150 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {appType.length}/150
+                  </span>
+                </div>
+                <input
+                  id="appType"
+                  type="text"
+                  required
+                  maxLength={150}
+                  disabled={isSubmitting}
+                  value={appType}
+                  onChange={(e) => setAppType(e.target.value)}
+                  placeholder="Contoh: Executive Dashboard / Point of Sale"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="appTagline"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Tagline Aplikasi <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${tagline.length > 255 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
+                    {tagline.length}/255
+                  </span>
+                </div>
+                <input
+                  id="appTagline"
+                  type="text"
+                  required
+                  maxLength={255}
+                  disabled={isSubmitting}
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  placeholder="Masukkan tagline singkat aplikasi..."
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
+                />
+              </div>
+            </div>
+
+            {/* Field 6: Deskripsi Aplikasi */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="appDescription"
+                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+              >
+                Deskripsi Lengkap <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="appDescription"
+                required
+                rows={3}
+                disabled={isSubmitting}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Jelaskan fungsi utama, target pengguna, dan manfaat sistem ini..."
+                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all resize-none disabled:opacity-60"
+              />
+            </div>
+
+            {/* Field 7: URL Aplikasi */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="appUrl"
+                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+              >
+                URL Tujuan Aplikasi <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="appUrl"
+                type="text"
+                required
+                disabled={isSubmitting}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://aplikasi.id atau subdomain instansi"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
+              />
+            </div>
+
+            {/* Field 8: Keunggulan Aplikasi (Features — Maksimal 4 Poin) */}
+            <div className="flex flex-col gap-2 p-4 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider block">
+                    Keunggulan Aplikasi
+                  </label>
+                  <span className="text-[11px] text-[#64748b]">
+                    Maksimal 4 poin keunggulan yang akan ditampilkan pada panel detail aplikasi
+                  </span>
+                </div>
+                <span className="text-xs font-mono font-bold text-[#075e54] bg-[#e6f7ef] px-2.5 py-0.5 rounded-full border border-[#bce8d4]">
+                  {features.length}/4 Item
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2.5 mt-1">
+                {features.map((feat, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-100 text-[#075e54] text-xs font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={feat}
+                      onChange={(e) => handleFeatureChange(idx, e.target.value)}
+                      placeholder={`Contoh keunggulan ${idx + 1}...`}
+                      disabled={isSubmitting}
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-[#d8e0e5] text-xs sm:text-sm text-[#111b21] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
+                    />
+                    {features.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFeature(idx)}
+                        disabled={isSubmitting}
+                        title="Hapus baris ini"
+                        className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm transition-colors border border-red-200 cursor-pointer disabled:opacity-50"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {features.length < 4 ? (
+                <button
+                  type="button"
+                  onClick={handleAddFeature}
+                  disabled={isSubmitting}
+                  className="mt-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-[#128c7e] bg-white hover:bg-[#e6f7ef] text-[#075e54] text-xs font-headline font-bold transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span>+ Tambah Keunggulan ({4 - features.length} tersisa)</span>
+                </button>
+              ) : (
+                <div className="mt-1 text-center py-1.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#075e54] text-xs font-semibold">
+                  Maksimal 4 keunggulan telah tercapai
+                </div>
+              )}
+            </div>
+
+            {/* Field 9: Upload Icon Aplikasi */}
             <div className="flex flex-col gap-1.5">
               <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
                 Upload Icon Aplikasi <span className="text-red-500">*</span>
               </label>
 
-              {/* Hidden Native File Input with Strict MIME Accept */}
+              {/* Hidden Native File Input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -483,7 +640,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                       {iconPreview ? 'Klik untuk mengganti icon' : 'Klik untuk unggah icon gambar'}
                     </span>
                     <span className="text-[10px] bg-[#e6f7ef] text-[#075e54] px-2 py-0.5 rounded-full font-bold">
-                      Khusus Gambar
+                      Format Gambar
                     </span>
                   </div>
                   <p className="text-[11px] text-[#54656f] mt-0.5 truncate">
@@ -497,91 +654,8 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
               </div>
             </div>
 
-            {/* Field 6: Upload Gambar Aplikasi (Opsional) */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
-                  Upload Gambar Aplikasi <span className="text-[11px] font-normal text-[#8696a0] normal-case tracking-normal">(Opsional)</span>
-                </label>
-                {appImagePreview && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveAppImage}
-                    disabled={isSubmitting}
-                    className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
-                  >
-                    Hapus Gambar
-                  </button>
-                )}
-              </div>
-
-              {/* Hidden Native File Input for App Image */}
-              <input
-                ref={appImageInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
-                onChange={handleAppImageChange}
-                disabled={isSubmitting}
-                className="hidden"
-                id="app-image-upload"
-              />
-
-              <label
-                htmlFor="app-image-upload"
-                className={`flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed cursor-pointer transition-all overflow-hidden ${
-                  appImagePreview
-                    ? 'border-[#25d366] bg-[#f7fbf9] p-3'
-                    : 'border-[#d8e0e5] bg-[#f7f9fa] hover:bg-[#edf9f3] hover:border-[#128c7e] py-5 px-4'
-                } ${isSubmitting ? 'opacity-60 pointer-events-none' : ''}`}
-              >
-                {appImagePreview ? (
-                  <div className="w-full flex flex-col items-center gap-2">
-                    {/* Bagian Preview Gambar Aplikasi */}
-                    <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-100 border border-[#d8e0e5] flex items-center justify-center">
-                      {appImagePreview.startsWith('data:') || appImagePreview.startsWith('blob:') ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={appImagePreview}
-                          alt="Preview Gambar Aplikasi"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <LocalIconImage
-                          src={appImagePreview}
-                          alt="Preview Gambar Aplikasi"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <span className="text-xs font-bold text-[#075e54] hover:underline">
-                      Klik untuk mengganti gambar aplikasi
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center text-center gap-1.5">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-[#d8e0e5] text-[#075e54] flex items-center justify-center shadow-sm">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.75}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-xs sm:text-sm font-bold text-[#111b21]">
-                      Pilih gambar banner/preview aplikasi
-                    </p>
-                    <p className="text-[11px] text-[#8696a0]">
-                      PNG, JPG, WEBP, SVG (Maks. 5MB) — Opsional
-                    </p>
-                  </div>
-                )}
-              </label>
-            </div>
-
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e9edf0] mt-1">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e9edf0] mt-1 sticky bottom-0 bg-white z-10">
               <button
                 type="button"
                 onClick={onClose}
@@ -609,7 +683,7 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Simpan</span>
+                    <span>Simpan Aplikasi</span>
                   </>
                 )}
               </button>

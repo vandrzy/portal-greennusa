@@ -95,14 +95,16 @@ export default function AdminAplikasiPage() {
 
   const handleSaveModal = async (data: {
     title: string;
+    name: string;
+    appType: string;
+    tagline: string;
+    features: string[];
     description: string;
     url: string;
     category: CategoryType;
     iconFile?: File | null;
     iconPath?: string;
     appImage?: string | null;
-    appImageFile?: File | null;
-    removeAppImage?: boolean;
   }) => {
     if (selectedApp) {
       const res = await updateApp(selectedApp.id, data);
@@ -342,9 +344,21 @@ export default function AdminAplikasiPage() {
                     {/* Kolom 2: Nama */}
                     <td className="py-3.5 px-5">
                       <div className="flex flex-col min-w-0 pr-4">
-                        <span className="font-headline font-extrabold text-sm sm:text-[15px] text-[#111b21] group-hover:text-[#075e54] transition-colors">
-                          {app.title}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-headline font-extrabold text-sm sm:text-[15px] text-[#111b21] group-hover:text-[#075e54] transition-colors">
+                            {app.title || app.name}
+                          </span>
+                          {app.appType && (
+                            <span className="px-2 py-0.5 rounded-md bg-[#f0fdf4] border border-[#bbf7d0] text-[#166534] text-[10.5px] font-bold">
+                              {app.appType}
+                            </span>
+                          )}
+                        </div>
+                        {app.tagline && (
+                          <span className="text-xs font-semibold text-[#075e54] line-clamp-1 mt-0.5 font-body">
+                            {app.tagline}
+                          </span>
+                        )}
                         <p className="text-xs text-[#54656f] line-clamp-1 mt-0.5 font-body">
                           {app.description.replace(/\*/g, '')}
                         </p>

@@ -1,6 +1,6 @@
 import { PrismaClient, AppCategory } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { PEMERINTAHAN_APPS, SWASTA_APPS } from '../src/data/ecosystemApps';
+import { ECOSYSTEM_APPS } from '../src/data/ecosystemApps';
 
 const prisma = new PrismaClient();
 
@@ -29,8 +29,8 @@ async function main() {
 
   console.log(`✅ Akun Admin berhasil dibuat/diperbarui: ${adminUser.email} (ID: ${adminUser.id})`);
 
-  // 2. Gabungkan seluruh aplikasi dari data statis
-  const appsToSeed = [...PEMERINTAHAN_APPS, ...SWASTA_APPS];
+  // 2. Gabungkan seluruh aplikasi dari data statis ECOSYSTEM_APPS
+  const appsToSeed = ECOSYSTEM_APPS;
 
   if (appsToSeed.length === 0) {
     throw new Error(
@@ -38,22 +38,27 @@ async function main() {
     );
   }
 
-  // Bersihkan tabel apps terlebih dahulu agar tidak duplikat saat re-seed
-  await prisma.app.deleteMany();
+  // Bersihkan tabel applications terlebih dahulu agar tidak duplikat saat re-seed
+  await prisma.application.deleteMany();
 
-  // Masukkan seluruh aplikasi (UUID di-generate otomatis oleh Prisma)
+  // Masukkan seluruh aplikasi ke tabel applications
   for (const app of appsToSeed) {
-    const createdApp = await prisma.app.create({
+    const createdApp = await prisma.application.create({
       data: {
+        slug: app.id,
         title: app.title,
+        name: app.name,
+        appType: app.appType,
+        tagline: app.tagline,
+        features: app.features.slice(0, 4),
         description: app.description,
-        url: app.url,
         category: app.category as AppCategory,
-        iconPath: app.iconPath,
-        appImage: app.appImage || null,
+        iconUrl: app.icon || app.iconPath || '',
+        appImage: null,
+        url: app.url,
       },
     });
-    console.log(`📦 Seeded App: [${createdApp.category}] ${createdApp.title} -> UUID: ${createdApp.id}`);
+    console.log(`📦 Seeded Application: [${createdApp.category}] ${createdApp.name} (${createdApp.slug}) -> ID: ${createdApp.id}`);
   }
 
   // 3. Seed data awal Konten Portal berdasarkan konten statis yang ada saat ini

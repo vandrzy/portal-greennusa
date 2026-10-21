@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
 
     // 2. Ambil data agregat secara paralel menggunakan Promise.all untuk kecepatan respons optimal
     const [pemerintahanCount, swastaCount, totalCount] = await Promise.all([
-      prisma.app.count({ where: { category: 'pemerintahan' } }),
-      prisma.app.count({ where: { category: 'swasta' } }),
-      prisma.app.count(),
+      prisma.application.count({ where: { category: 'pemerintahan' } }),
+      prisma.application.count({ where: { category: 'swasta' } }),
+      prisma.application.count(),
     ]);
 
     // 3. Kembalikan response JSON

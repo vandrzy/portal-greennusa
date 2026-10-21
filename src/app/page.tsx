@@ -1,5 +1,5 @@
-import App from '../App';
+import { PortalMainView } from '@/components/portal';
 
 export default function HomePage() {
-  return <App />;
+  return <PortalMainView />;
 }

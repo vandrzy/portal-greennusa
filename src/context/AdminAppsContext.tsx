@@ -6,6 +6,10 @@ import { EcosystemAppItem, CategoryType } from '@/types';
 
 export interface AppPayload {
   title: string;
+  name?: string;
+  appType: string;
+  tagline: string;
+  features?: string[];
   description: string;
   url: string;
   category: CategoryType;
@@ -176,9 +180,16 @@ export const AdminAppsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const fd = new FormData();
     if (payload.title) fd.append('title', payload.title);
+    if (payload.name) fd.append('name', payload.name);
+    else if (payload.title) fd.append('name', payload.title);
+    if (payload.appType) fd.append('appType', payload.appType);
+    if (payload.tagline) fd.append('tagline', payload.tagline);
     if (payload.description) fd.append('description', payload.description);
     if (payload.url) fd.append('url', payload.url);
     if (payload.category) fd.append('category', payload.category);
+    if (payload.features && Array.isArray(payload.features)) {
+      fd.append('features', JSON.stringify(payload.features));
+    }
 
     const fileToUpload = payload.iconFile || payload.icon;
     if (fileToUpload instanceof File) {

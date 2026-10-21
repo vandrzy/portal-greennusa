@@ -4,6 +4,23 @@ import { AppCategory } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+const parseFeatures = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw.map((item) => String(item).trim()).filter(Boolean).slice(0, 4);
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean).slice(0, 4);
+      }
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -22,8 +39,8 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const [total, apps] = await Promise.all([
-      prisma.app.count({ where: whereClause }),
-      prisma.app.findMany({
+      prisma.application.count({ where: whereClause }),
+      prisma.application.findMany({
         where: whereClause,
         ...(isPaginated ? { skip, take: limit } : {}),
         orderBy: {
@@ -32,19 +49,23 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // Transformasi response agar tetap 100% sesuai dengan interface EcosystemApp di frontend
-    // dan gambar disajikan melalui endpoint GET /api/icon
+    // Transformasi response agar sesuai dengan interface EcosystemApp dan kontrak API baru
     const formattedApps = apps.map((app) => ({
-      id: app.id, // UUID dari database
-      title: app.title,
-      name: app.title,
+      id: app.slug,
+      dbId: app.id,
+      title: app.title || app.name,
+      name: app.name,
+      appType: app.appType || '',
+      tagline: app.tagline || '',
+      features: parseFeatures(app.features),
+      category: app.category === 'pemerintahan' ? 'pemerintahan' : 'swasta',
       description: app.description,
+      icon: app.iconUrl,
+      iconPath: app.iconUrl.startsWith('/api/icon')
+        ? app.iconUrl
+        : `/api/icon?path=${encodeURIComponent(app.iconUrl)}`,
+      rawIconPath: app.iconUrl,
       url: app.url,
-      category: app.category,
-      iconPath: app.iconPath.startsWith('/api/icon')
-        ? app.iconPath
-        : `/api/icon?path=${encodeURIComponent(app.iconPath)}`,
-      rawIconPath: app.iconPath,
       appImage: app.appImage ?? null,
     }));
 
