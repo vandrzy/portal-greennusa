@@ -7,3 +7,5 @@ export * from './modal/AppLaunchCard';
 export * from './modal/AppCardSkeleton';
 export * from './modal/UnifiedEcosystemModal';
 export * from './common/WhatsAppFloatingButton';
+export * from './portal';
+

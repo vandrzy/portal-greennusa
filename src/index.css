@@ -1,4 +1,5 @@
 @import './styles/portalAnimations.css';
+@import './styles/portal.css';
 
 @tailwind base;
 @tailwind components;

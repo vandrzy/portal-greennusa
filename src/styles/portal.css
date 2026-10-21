@@ -1,0 +1,120 @@
+/* ==========================================================================
+   PORTAL EKOSISTEM DIGITAL - 3D FOLDER & ORBIT SYSTEM STYLES
+   ========================================================================== */
+
+/* 3D FOLDER STYLES */
+.green-folder-card {
+  position: relative;
+  width: 158px;
+  padding-top: 12px;
+  text-align: left;
+  outline: none;
+  transform-style: preserve-3d;
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+
+@media (max-width: 640px) {
+  .green-folder-card {
+    width: 140px;
+  }
+}
+
+.folder-back-plate {
+  position: absolute;
+  inset: 12px 0 0 0;
+  border-radius: 20px;
+  transition: transform 0.35s ease;
+}
+
+.folder-top-tab {
+  position: absolute;
+  top: 2px;
+  left: 14px;
+  width: 64px;
+  height: 18px;
+  border-radius: 10px 10px 0 0;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  border-right: 1px solid rgba(255, 255, 255, 0.22);
+  z-index: 1;
+  transition: transform 0.35s ease, background 0.3s ease;
+}
+
+.folder-paper-sheet {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #d1fae5 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+  transform: translateY(4px) scale(0.95);
+  opacity: 0.75;
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.folder-paper-sheet-2 {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 8px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(167, 243, 208, 0.75);
+  z-index: 1;
+  transform: translateY(6px) scale(0.92);
+  opacity: 0.55;
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.folder-front-cover {
+  position: relative;
+  z-index: 3;
+  border-radius: 20px;
+  box-shadow:
+    0 16px 30px -10px rgba(18, 48, 37, 0.42),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.32);
+  transform-origin: bottom center;
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease,
+              background 0.3s ease;
+}
+
+.green-folder-card:hover {
+  transform: translateY(-4px);
+}
+
+.green-folder-card:hover .folder-paper-sheet {
+  transform: translateY(-5px) rotate(-2deg) scale(0.98);
+  opacity: 0.95;
+}
+
+.green-folder-card:hover .folder-paper-sheet-2 {
+  transform: translateY(-9px) rotate(2.5deg) scale(0.95);
+  opacity: 0.8;
+}
+
+.green-folder-card:hover .folder-front-cover {
+  transform: rotateX(-9deg);
+}
+
+.green-folder-card.is-open {
+  transform: translateY(-3px) scale(1.04);
+}
+
+.green-folder-card.is-open .folder-paper-sheet {
+  transform: translateY(-8px) rotate(-2deg) scale(1);
+  opacity: 1;
+}
+
+.green-folder-card.is-open .folder-paper-sheet-2 {
+  transform: translateY(-13px) rotate(3deg) scale(0.97);
+  opacity: 0.9;
+}
+
+.green-folder-card.is-open .folder-front-cover {
+  transform: rotateX(-14deg);
+}
