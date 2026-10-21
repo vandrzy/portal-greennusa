@@ -6,6 +6,7 @@ export type FolderCategory = EcosystemCategoryId;
 
 export interface EcosystemApp {
   id: string;
+  dbId?: number;
   name: string;               // Nama aplikasi (ditampilkan di bawah icon)
   title: string;              // Judul lengkap aplikasi (ditampilkan di modal)
   appType: string;            // Jenis aplikasi (badge di atas judul pada modal)
