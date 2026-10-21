@@ -793,7 +793,7 @@ export const PortalMainView: React.FC = () => {
         <img
           src={portalContent?.logoUrl || '/api/assets/logo/logo green.png'}
           alt="Logo GreenNusa Computindo"
-          className="h-[90px] w-auto max-w-[280px] sm:max-w-none object-contain filter drop-shadow-[0_4px_18px_rgba(16,185,129,0.22)] transition-transform duration-300 hover:scale-105 select-none"
+          className="h-[90px] w-auto max-w-[280px] sm:max-w-none object-contain transition-transform duration-300 hover:scale-105 select-none"
         />
       </header>
 
@@ -1079,28 +1079,7 @@ export const PortalMainView: React.FC = () => {
             />
           </PortalThreeSphereStage>
 
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2.5 z-20">
-            <div className="platform-chip px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-extrabold text-emerald-950">
-              <span className="w-6 h-6 rounded-lg bg-stone-900 text-white flex items-center justify-center">
-                <i className="fa-brands fa-apple text-xs"></i>
-              </span>
-              <span>Apple iOS</span>
-            </div>
 
-            <div className="platform-chip px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-extrabold text-emerald-950">
-              <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-                <i className="fa-brands fa-android text-xs"></i>
-              </span>
-              <span>Android APK</span>
-            </div>
-
-            <div className="platform-chip px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-extrabold text-emerald-950">
-              <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center">
-                <i className="fa-solid fa-globe text-[11px]"></i>
-              </span>
-              <span>Web Cloud</span>
-            </div>
-          </div>
         </section>
       </main>
 

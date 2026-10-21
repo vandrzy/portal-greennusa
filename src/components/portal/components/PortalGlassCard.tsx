@@ -43,16 +43,14 @@ export const PortalGlassCard: React.FC<PortalGlassCardProps> = ({
       <div
         id="card-top-sticker"
         ref={topStickerRef}
-        className="floating-corner-sticker absolute -top-5 right-6 w-14 h-14 flex items-center justify-center transform rotate-6 text-emerald-700"
+        className="floating-corner-sticker absolute -top-5 right-6 w-14 h-14 !p-0 flex items-center justify-center transform rotate-6 text-emerald-700"
       >
         {currentGlassApp.iconUrl ? (
-          <div className="w-9 h-9 flex items-center justify-center">
-            <LocalIconImage
-              iconPath={currentGlassApp.iconUrl}
-              altOverride={currentGlassApp.title}
-              className="w-full h-full object-contain filter drop-shadow-sm"
-            />
-          </div>
+          <LocalIconImage
+            iconPath={currentGlassApp.iconUrl}
+            altOverride={currentGlassApp.title}
+            className="w-10 h-10 object-contain"
+          />
         ) : (
           <div
             id="sticker-svg-holder"

@@ -70,7 +70,7 @@ export const PortalIntroOverlay: React.FC<PortalIntroOverlayProps> = ({
             <img
               src={logoUrl || '/api/assets/logo/logo green.png'}
               alt="GreenNusa Logo"
-              className="w-12 h-12 object-contain drop-shadow"
+              className="w-12 h-12 object-contain"
               onError={(e) => {
                 const target = e.currentTarget;
                 if (!target.src.includes('logo-green.png')) {

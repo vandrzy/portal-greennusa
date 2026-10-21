@@ -82,7 +82,7 @@ export const PortalDirectoryModal: React.FC<PortalDirectoryModalProps> = ({
                         <LocalIconImage
                           iconPath={app.iconUrl}
                           altOverride={app.shortName}
-                          className="w-full h-full object-contain filter drop-shadow-sm"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                     ) : (
@@ -134,7 +134,7 @@ export const PortalDirectoryModal: React.FC<PortalDirectoryModalProps> = ({
                         <LocalIconImage
                           iconPath={app.iconUrl}
                           altOverride={app.shortName}
-                          className="w-full h-full object-contain filter drop-shadow-sm"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                     ) : (

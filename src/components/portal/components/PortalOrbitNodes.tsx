@@ -74,7 +74,7 @@ export const PortalOrbitNodes: React.FC<PortalOrbitNodesProps> = ({
                   <LocalIconImage
                     iconPath={app.iconUrl}
                     altOverride={app.shortName}
-                    className="w-full h-full object-contain filter drop-shadow-sm"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               ) : (

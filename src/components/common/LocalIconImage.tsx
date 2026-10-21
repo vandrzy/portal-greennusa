@@ -18,7 +18,7 @@ const DEFAULT_FALLBACK_SVG =
 export const LocalIconImage: React.FC<LocalIconImageProps> = ({
   iconPath,
   src,
-  className = 'w-full h-full object-contain filter drop-shadow-sm',
+  className = 'w-full h-full object-contain',
   altOverride,
   alt = 'Gambar Aplikasi',
 }) => {
