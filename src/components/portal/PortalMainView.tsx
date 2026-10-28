@@ -21,8 +21,9 @@ import { PortalFoldersHub } from './components/PortalFoldersHub';
 import { PortalOrbitNodes } from './components/PortalOrbitNodes';
 import { PortalThreeSphereStage } from './components/PortalThreeSphereStage';
 import { PortalGlassCard } from './components/PortalGlassCard';
-import { PortalDirectoryModal } from './components/PortalDirectoryModal';
+import { UnifiedEcosystemModal } from '@/components/modal/UnifiedEcosystemModal';
 import { PortalToast } from './components/PortalToast';
+import { CategoryType } from '@/types';
 
 // Global Three.js / GSAP / Anime.js window typing
 declare global {
@@ -43,6 +44,7 @@ export const PortalMainView: React.FC = () => {
   const [isPointing, setIsPointing] = useState<boolean>(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState<boolean>(true);
   const [isDirModalOpen, setIsDirModalOpen] = useState<boolean>(false);
+  const [catalogCategory, setCatalogCategory] = useState<CategoryType>('pemerintahan');
   const [toastMessage, setToastMessage] = useState<string>('Akun demo disalin');
   const [isToastVisible, setIsToastVisible] = useState<boolean>(false);
   const [scriptsReady, setScriptsReady] = useState<boolean>(false);
@@ -644,6 +646,20 @@ export const PortalMainView: React.FC = () => {
     }, 300);
   };
 
+  const handleOpenCatalogModal = useCallback(
+    (cat?: CategoryType) => {
+      if (cat) {
+        setCatalogCategory(cat);
+      } else if (activeCategory === 'biz') {
+        setCatalogCategory('swasta');
+      } else {
+        setCatalogCategory('pemerintahan');
+      }
+      setIsDirModalOpen(true);
+    },
+    [activeCategory]
+  );
+
   const requestDemoWaUrl = useMemo(() => {
     const rawWa = portalContent?.whatsappLink || 'https://wa.me/6281348039947';
     if (rawWa.includes('text=')) return rawWa;
@@ -914,6 +930,7 @@ export const PortalMainView: React.FC = () => {
               govCount={govApps.length}
               bizCount={bizApps.length}
               onToggleCategory={toggleFolderCategory}
+              onOpenCatalogModal={handleOpenCatalogModal}
               onMouseEnter={() => setIsPointing(true)}
               onMouseLeave={() => setIsPointing(false)}
             />
@@ -977,7 +994,7 @@ export const PortalMainView: React.FC = () => {
               <button
                 id="btn-open-all-directory"
                 type="button"
-                onClick={() => setIsDirModalOpen(true)}
+                onClick={() => handleOpenCatalogModal()}
                 onMouseEnter={() => setIsPointing(true)}
                 onMouseLeave={() => setIsPointing(false)}
                 className="interactive-target px-4 py-3 rounded-full bg-white border border-emerald-950/15 text-emerald-950 hover:bg-emerald-50 text-xs font-extrabold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
@@ -1083,15 +1100,13 @@ export const PortalMainView: React.FC = () => {
         </section>
       </main>
 
-      {/* MODAL DIREKTORI LENGKAP ("SEMUA KATALOG") */}
-      <PortalDirectoryModal
+      {/* MODAL KATALOG EKOSISTEM (UNIFIED MODAL DARI BRANCH USE-NEXT-JS) */}
+      <UnifiedEcosystemModal
         isOpen={isDirModalOpen}
+        activeCategory={catalogCategory}
+        apps={apps.length > 0 ? apps : undefined}
+        onSwitchCategory={(cat) => setCatalogCategory(cat)}
         onClose={() => setIsDirModalOpen(false)}
-        govApps={govApps}
-        bizApps={bizApps}
-        onSelectApp={handleSelectDirectoryApp}
-        onHoverAction={() => setIsPointing(true)}
-        onLeaveAction={() => setIsPointing(false)}
       />
 
 

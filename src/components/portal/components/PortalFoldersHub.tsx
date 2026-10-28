@@ -12,6 +12,7 @@ export interface PortalFoldersHubProps {
   govCount: number;
   bizCount: number;
   onToggleCategory: (cat: CategoryKey) => void;
+  onOpenCatalogModal?: (cat: 'pemerintahan' | 'swasta') => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
@@ -27,6 +28,7 @@ export const PortalFoldersHub: React.FC<PortalFoldersHubProps> = ({
   govCount,
   bizCount,
   onToggleCategory,
+  onOpenCatalogModal,
   onMouseEnter,
   onMouseLeave,
 }) => {
@@ -71,7 +73,16 @@ export const PortalFoldersHub: React.FC<PortalFoldersHubProps> = ({
           </h2>
 
           <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between gap-1.5">
-            <span className="px-2 py-0.5 rounded-md bg-white/15 text-[9.5px] font-bold inline-flex items-center gap-1.5">
+            <span
+              onClick={(e) => {
+                if (onOpenCatalogModal) {
+                  e.stopPropagation();
+                  onOpenCatalogModal('pemerintahan');
+                }
+              }}
+              title="Buka Katalog Lengkap Pemerintahan"
+              className="px-2 py-0.5 rounded-md bg-white/15 hover:bg-white/25 active:scale-95 text-[9.5px] font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+            >
               <i className="fa-solid fa-layer-group text-[9.5px]"></i> {govCount} Apps
             </span>
             <span className="px-2 py-0.5 rounded-md bg-white/15 text-[9.5px] font-bold inline-flex items-center gap-1.5">
@@ -120,7 +131,16 @@ export const PortalFoldersHub: React.FC<PortalFoldersHubProps> = ({
           </h2>
 
           <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between gap-1.5">
-            <span className="px-2 py-0.5 rounded-md bg-white/15 text-[9.5px] font-bold inline-flex items-center gap-1.5">
+            <span
+              onClick={(e) => {
+                if (onOpenCatalogModal) {
+                  e.stopPropagation();
+                  onOpenCatalogModal('swasta');
+                }
+              }}
+              title="Buka Katalog Lengkap Swasta"
+              className="px-2 py-0.5 rounded-md bg-white/15 hover:bg-white/25 active:scale-95 text-[9.5px] font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
+            >
               <i className="fa-solid fa-layer-group text-[9.5px]"></i> {bizCount} Apps
             </span>
             <span className="px-2 py-0.5 rounded-md bg-white/15 text-[9.5px] font-bold inline-flex items-center gap-1.5">
