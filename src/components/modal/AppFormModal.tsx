@@ -179,8 +179,8 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('Judul aplikasi wajib diisi');
       return;
     }
-    if (title.trim().length > 255) {
-      setErrorMessage('Judul aplikasi maksimal 255 karakter');
+    if (title.trim().length > 60) {
+      setErrorMessage('Judul aplikasi maksimal 60 karakter');
       return;
     }
 
@@ -189,8 +189,8 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('Nama aplikasi wajib diisi');
       return;
     }
-    if (effectiveName.length > 150) {
-      setErrorMessage('Nama aplikasi maksimal 150 karakter');
+    if (effectiveName.length > 25) {
+      setErrorMessage('Nama aplikasi maksimal 25 karakter');
       return;
     }
 
@@ -198,8 +198,8 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('Jenis aplikasi wajib diisi');
       return;
     }
-    if (appType.trim().length > 150) {
-      setErrorMessage('Jenis aplikasi maksimal 150 karakter');
+    if (appType.trim().length > 25) {
+      setErrorMessage('Jenis aplikasi maksimal 25 karakter');
       return;
     }
 
@@ -207,13 +207,17 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       setErrorMessage('Tagline aplikasi wajib diisi');
       return;
     }
-    if (tagline.trim().length > 255) {
-      setErrorMessage('Tagline aplikasi maksimal 255 karakter');
+    if (tagline.trim().length > 70) {
+      setErrorMessage('Tagline aplikasi maksimal 70 karakter');
       return;
     }
 
     if (!description.trim()) {
       setErrorMessage('Deskripsi wajib diisi');
+      return;
+    }
+    if (description.trim().length > 200) {
+      setErrorMessage('Deskripsi aplikasi maksimal 200 karakter');
       return;
     }
 
@@ -225,6 +229,10 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
     const cleanedFeatures = features.map((f) => f.trim()).filter(Boolean);
     if (cleanedFeatures.length > 4) {
       setErrorMessage('Keunggulan aplikasi maksimal 4 poin');
+      return;
+    }
+    if (features.some((f) => f.length > 60)) {
+      setErrorMessage('Tiap item keunggulan aplikasi maksimal 60 karakter');
       return;
     }
 
@@ -271,423 +279,448 @@ export const AppFormModal: React.FC<AppFormModalProps> = ({
       {/* Backdrop */}
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-50 bg-[#075e54]/40 backdrop-blur-[8px] transition-opacity duration-300"
+        onClick={handleBackdropClick}
+        className="fixed inset-0 z-50 bg-[#075e54]/40 backdrop-blur-[6px] transition-opacity duration-300"
       />
 
-      {/* Modal Centered Container */}
+      {/* Modal Dialog Viewport */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="appModalTitle"
         onClick={handleBackdropClick}
-        className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-5"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-hidden"
       >
         <div
           ref={modalContainerRef}
-          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-[24px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.25)] p-6 sm:p-7 flex flex-col gap-5 my-auto transform transition-all duration-300"
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-[26px] border border-[#d8e0e5] shadow-[0_24px_60px_-15px_rgba(7,94,84,0.3)] flex flex-col overflow-hidden my-auto transform transition-all duration-300 animate-scale-up"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#e9edf0] sticky top-0 bg-white z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#e6f7ef] text-[#075e54] flex items-center justify-center font-bold">
-                {isEditMode ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <span className="font-headline text-[10.5px] font-bold tracking-wider uppercase text-[#075e54] block">
-                  {isEditMode ? 'PERBARUI DATA' : 'TAMBAH KE EKOSISTEM'}
-                </span>
-                <h2
-                  id="appModalTitle"
-                  className="font-headline text-xl font-extrabold text-[#111b21] tracking-tight"
-                >
-                  {isEditMode ? 'Edit Aplikasi' : 'Tambah Aplikasi'}
-                </h2>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              aria-label="Tutup form"
-              className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#111b21] flex items-center justify-center font-bold text-sm transition-colors border border-[#d1d7db] disabled:opacity-50 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Error Notice */}
-          {errorMessage && (
-            <div
-              role="alert"
-              className="p-3.5 rounded-xl bg-[#fee2e2]/90 border border-[#fca5a5] text-[#991b1b] text-xs font-medium flex items-center gap-2"
-            >
-              <svg className="w-4 h-4 flex-shrink-0 text-[#dc2626]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Field 1: Judul Aplikasi (Urutan Paling Pertama) */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="appTitle"
-                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                >
-                  Judul Aplikasi <span className="text-red-500">*</span>
-                </label>
-                <span className={`text-[11px] font-mono ${title.length > 255 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                  {title.length}/255
-                </span>
-              </div>
-              <input
-                id="appTitle"
-                type="text"
-                required
-                maxLength={255}
-                disabled={isSubmitting}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: Portal Induk Dalev Bapperida / Fixmate — Manajemen Servis & Perbaikan"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-              />
-            </div>
-
-            {/* Field 2 & 3: Nama Aplikasi & Kategori */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="appName"
-                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                  >
-                    Nama Pendek Aplikasi <span className="text-red-500">*</span>
-                  </label>
-                  <span className={`text-[11px] font-mono ${name.length > 150 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                    {name.length}/150
-                  </span>
-                </div>
-                <input
-                  id="appName"
-                  type="text"
-                  required
-                  maxLength={150}
-                  disabled={isSubmitting}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Dalev Induk, FixMate, Nusa Kasir"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="appCategory"
-                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                >
-                  Kategori Ekosistem <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="appCategory"
-                  disabled={isSubmitting}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as CategoryType)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all cursor-pointer font-medium disabled:opacity-60"
-                >
-                  <option value="pemerintahan">Pemerintahan</option>
-                  <option value="swasta">Swasta</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Field 4 & 5: Jenis Aplikasi & Tagline */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="appType"
-                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                  >
-                    Jenis Aplikasi <span className="text-red-500">*</span>
-                  </label>
-                  <span className={`text-[11px] font-mono ${appType.length > 150 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                    {appType.length}/150
-                  </span>
-                </div>
-                <input
-                  id="appType"
-                  type="text"
-                  required
-                  maxLength={150}
-                  disabled={isSubmitting}
-                  value={appType}
-                  onChange={(e) => setAppType(e.target.value)}
-                  placeholder="Contoh: Executive Dashboard / Point of Sale"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="appTagline"
-                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-                  >
-                    Tagline Aplikasi <span className="text-red-500">*</span>
-                  </label>
-                  <span className={`text-[11px] font-mono ${tagline.length > 255 ? 'text-red-600 font-bold' : 'text-[#64748b]'}`}>
-                    {tagline.length}/255
-                  </span>
-                </div>
-                <input
-                  id="appTagline"
-                  type="text"
-                  required
-                  maxLength={255}
-                  disabled={isSubmitting}
-                  value={tagline}
-                  onChange={(e) => setTagline(e.target.value)}
-                  placeholder="Masukkan tagline singkat aplikasi..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-                />
-              </div>
-            </div>
-
-            {/* Field 6: Deskripsi Aplikasi */}
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="appDescription"
-                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-              >
-                Deskripsi Lengkap <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="appDescription"
-                required
-                rows={3}
-                disabled={isSubmitting}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Jelaskan fungsi utama, target pengguna, dan manfaat sistem ini..."
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all resize-none disabled:opacity-60"
-              />
-            </div>
-
-            {/* Field 7: URL Aplikasi */}
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="appUrl"
-                className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
-              >
-                URL Tujuan Aplikasi <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="appUrl"
-                type="text"
-                required
-                disabled={isSubmitting}
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://aplikasi.id atau subdomain instansi"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#f7f9fa] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-              />
-            </div>
-
-            {/* Field 8: Keunggulan Aplikasi (Features — Maksimal 4 Poin) */}
-            <div className="flex flex-col gap-2 p-4 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider block">
-                    Keunggulan Aplikasi
-                  </label>
-                  <span className="text-[11px] text-[#64748b]">
-                    Maksimal 4 poin keunggulan yang akan ditampilkan pada panel detail aplikasi
-                  </span>
-                </div>
-                <span className="text-xs font-mono font-bold text-[#075e54] bg-[#e6f7ef] px-2.5 py-0.5 rounded-full border border-[#bce8d4]">
-                  {features.length}/4 Item
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2.5 mt-1">
-                {features.map((feat, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-emerald-100 text-[#075e54] text-xs font-bold flex items-center justify-center shrink-0">
-                      {idx + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={feat}
-                      onChange={(e) => handleFeatureChange(idx, e.target.value)}
-                      placeholder={`Contoh keunggulan ${idx + 1}...`}
-                      disabled={isSubmitting}
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-[#d8e0e5] text-xs sm:text-sm text-[#111b21] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#25d366]/40 focus:border-[#128c7e] transition-all disabled:opacity-60"
-                    />
-                    {features.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature(idx)}
-                        disabled={isSubmitting}
-                        title="Hapus baris ini"
-                        className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm transition-colors border border-red-200 cursor-pointer disabled:opacity-50"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {features.length < 4 ? (
-                <button
-                  type="button"
-                  onClick={handleAddFeature}
-                  disabled={isSubmitting}
-                  className="mt-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-[#128c7e] bg-white hover:bg-[#e6f7ef] text-[#075e54] text-xs font-headline font-bold transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <span>+ Tambah Keunggulan ({4 - features.length} tersisa)</span>
-                </button>
-              ) : (
-                <div className="mt-1 text-center py-1.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#075e54] text-xs font-semibold">
-                  Maksimal 4 keunggulan telah tercapai
-                </div>
-              )}
-            </div>
-
-            {/* Field 9: Upload Icon Aplikasi */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
-                Upload Icon Aplikasi <span className="text-red-500">*</span>
-              </label>
-
-              {/* Hidden Native File Input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,image/gif"
-                onChange={handleFileChange}
-                disabled={isSubmitting}
-                className="hidden"
-              />
-
-              {/* Upload Box with Integrated Preview */}
-              <div
-                onClick={handleTriggerUpload}
-                className={`group relative w-full border-2 border-dashed border-[#bce8d4] hover:border-[#128c7e] bg-[#f7fbf9] hover:bg-[#edf9f3] rounded-2xl p-4 transition-all duration-200 cursor-pointer flex items-center gap-4 ${
-                  isSubmitting ? 'opacity-60 pointer-events-none' : ''
-                }`}
-              >
-                {/* Preview Box */}
-                <div className="w-16 h-16 rounded-2xl bg-white border border-[#d8e0e5] p-2 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden group-hover:scale-105 transition-transform">
-                  {iconPreview ? (
-                    iconPreview.startsWith('data:') || iconPreview.startsWith('blob:') ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={iconPreview}
-                        alt="Preview icon"
-                        className="w-full h-full object-contain filter drop-shadow-sm"
-                      />
-                    ) : (
-                      <LocalIconImage
-                        iconPath={iconPreview}
-                        altOverride="Preview icon"
-                        className="w-full h-full object-contain filter drop-shadow-sm"
-                      />
-                    )
-                  ) : (
-                    <svg
-                      className="w-8 h-8 text-[#8696a0]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+          {/* Form wraps header, scrollable body, and docked footer */}
+          <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[90vh] overflow-hidden">
+            
+            {/* 1. FIXED MODAL HEADER */}
+            <div className="flex items-center justify-between px-6 py-4.5 sm:px-7 sm:py-5 border-b border-[#e9edf0] bg-[#fbfcfc] shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#e6f7ef] text-[#075e54] border border-[#bce8d4] flex items-center justify-center font-bold shadow-xs shrink-0">
+                  {isEditMode ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
                       />
                     </svg>
                   )}
                 </div>
-
-                {/* Upload Action Description */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-headline text-xs font-bold text-[#075e54] group-hover:underline">
-                      {iconPreview ? 'Klik untuk mengganti icon' : 'Klik untuk unggah icon gambar'}
-                    </span>
-                    <span className="text-[10px] bg-[#e6f7ef] text-[#075e54] px-2 py-0.5 rounded-full font-bold">
-                      Format Gambar
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#54656f] mt-0.5 truncate">
-                    {iconPreview
-                      ? selectedFile
-                        ? `File dipilih: ${selectedFile.name}`
-                        : 'Icon saat ini aktif. Klik untuk memilih gambar pengganti.'
-                      : 'Hanya format PNG, JPG, JPEG, WebP, SVG, GIF (Maks. 5MB).'}
-                  </p>
+                <div>
+                  <span className="font-headline text-[10px] sm:text-[10.5px] font-bold tracking-wider uppercase text-[#075e54] block">
+                    {isEditMode ? 'PERBARUI DATA APLIKASI' : 'TAMBAH KE EKOSISTEM'}
+                  </span>
+                  <h2
+                    id="appModalTitle"
+                    className="font-headline text-lg sm:text-xl font-extrabold text-[#111b21] tracking-tight"
+                  >
+                    {isEditMode ? 'Edit Aplikasi' : 'Tambah Aplikasi Baru'}
+                  </h2>
                 </div>
               </div>
-            </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e9edf0] mt-1 sticky bottom-0 bg-white z-10">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-[#f0f2f5] hover:bg-[#e4e8eb] text-[#54656f] font-headline text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                aria-label="Tutup form"
+                className="w-8 h-8 rounded-full bg-[#f0f2f5] hover:bg-[#e4e8eb] active:scale-95 text-[#54656f] hover:text-[#111b21] flex items-center justify-center font-bold text-sm transition-all border border-[#d1d7db] disabled:opacity-50 cursor-pointer shrink-0"
               >
-                Batal
-              </button>
-              <button
-                type="submit"
-                id="submitAppModalBtn"
-                disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] active:bg-[#053e37] text-white font-headline text-xs font-bold shadow-[0_4px_12px_rgba(7,94,84,0.25)] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Simpan Aplikasi</span>
-                  </>
-                )}
+                ✕
               </button>
             </div>
+
+            {/* 2. DEDICATED SCROLLABLE CONTENT BODY */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-7 sm:py-6 space-y-4.5 custom-modal-scrollbar">
+              {/* Error Notice */}
+              {errorMessage && (
+                <div
+                  role="alert"
+                  className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2.5"
+                >
+                  <svg className="w-4 h-4 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Field 1: Judul Aplikasi (Urutan Paling Pertama) */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="appTitle"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Judul Aplikasi <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${title.length >= 60 ? 'text-amber-600 font-bold' : 'text-[#64748b]'}`}>
+                    {title.length}/60
+                  </span>
+                </div>
+                <input
+                  id="appTitle"
+                  type="text"
+                  required
+                  maxLength={60}
+                  disabled={isSubmitting}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Contoh: Portal Induk Dalev Bapperida"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                />
+                <p className="text-[11px] text-[#54656f]">Judul lengkap resmi yang ditampilkan pada kartu utama dan katalog aplikasi.</p>
+              </div>
+
+              {/* Field 2 & 3: Nama Pendek Aplikasi & Kategori */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="appName"
+                      className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                    >
+                      Nama Pendek Aplikasi <span className="text-red-500">*</span>
+                    </label>
+                    <span className={`text-[11px] font-mono ${name.length >= 25 ? 'text-amber-600 font-bold' : 'text-[#64748b]'}`}>
+                      {name.length}/25
+                    </span>
+                  </div>
+                  <input
+                    id="appName"
+                    type="text"
+                    required
+                    maxLength={25}
+                    disabled={isSubmitting}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Contoh: Dalev Induk, FixMate, Nusa Kasir"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="appCategory"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Kategori Ekosistem <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="appCategory"
+                    disabled={isSubmitting}
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as CategoryType)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all cursor-pointer font-medium disabled:opacity-60"
+                  >
+                    <option value="pemerintahan">Pemerintahan</option>
+                    <option value="swasta">Swasta</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Field 4 & 5: Jenis Aplikasi & Tagline */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="appType"
+                      className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                    >
+                      Jenis Aplikasi <span className="text-red-500">*</span>
+                    </label>
+                    <span className={`text-[11px] font-mono ${appType.length >= 25 ? 'text-amber-600 font-bold' : 'text-[#64748b]'}`}>
+                      {appType.length}/25
+                    </span>
+                  </div>
+                  <input
+                    id="appType"
+                    type="text"
+                    required
+                    maxLength={25}
+                    disabled={isSubmitting}
+                    value={appType}
+                    onChange={(e) => setAppType(e.target.value)}
+                    placeholder="Contoh: Executive Dashboard / POS"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="appTagline"
+                      className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                    >
+                      Tagline Aplikasi <span className="text-red-500">*</span>
+                    </label>
+                    <span className={`text-[11px] font-mono ${tagline.length >= 70 ? 'text-amber-600 font-bold' : 'text-[#64748b]'}`}>
+                      {tagline.length}/70
+                    </span>
+                  </div>
+                  <input
+                    id="appTagline"
+                    type="text"
+                    required
+                    maxLength={70}
+                    disabled={isSubmitting}
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    placeholder="Masukkan tagline singkat aplikasi..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                  />
+                </div>
+              </div>
+
+              {/* Field 6: Deskripsi Aplikasi */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="appDescription"
+                    className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                  >
+                    Deskripsi Lengkap <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-mono ${description.length >= 200 ? 'text-amber-600 font-bold' : 'text-[#64748b]'}`}>
+                    {description.length}/200
+                  </span>
+                </div>
+                <textarea
+                  id="appDescription"
+                  required
+                  maxLength={200}
+                  rows={3}
+                  disabled={isSubmitting}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Jelaskan fungsi utama, target pengguna, dan manfaat sistem ini..."
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all resize-none leading-relaxed disabled:opacity-60"
+                />
+              </div>
+
+              {/* Field 7: URL Aplikasi */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="appUrl"
+                  className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider"
+                >
+                  URL Tujuan Aplikasi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="appUrl"
+                  type="text"
+                  required
+                  disabled={isSubmitting}
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://aplikasi.id atau subdomain instansi"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#fbfcfc] border border-[#d8e0e5] text-sm text-[#111b21] placeholder-[#8696a0] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                />
+              </div>
+
+              {/* Field 8: Keunggulan Aplikasi (Features — Maksimal 4 Poin) */}
+              <div className="flex flex-col gap-2.5 p-4 rounded-2xl bg-[#f8fafc] border border-[#e2e8f0]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider block">
+                      Keunggulan Aplikasi
+                    </label>
+                    <span className="text-[11px] text-[#64748b]">
+                      Poin fitur unggulan (maks. 60 karakter/item) pada modal detail
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-[#075e54] bg-[#e6f7ef] px-2.5 py-0.5 rounded-full border border-[#bce8d4]">
+                    {features.length}/4 Item
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 mt-1">
+                  {features.map((feat, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-[#e6f7ef] text-[#075e54] text-xs font-bold flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="relative flex-1 flex items-center">
+                        <input
+                          type="text"
+                          maxLength={60}
+                          value={feat}
+                          onChange={(e) => handleFeatureChange(idx, e.target.value)}
+                          placeholder={`Contoh keunggulan ${idx + 1}...`}
+                          disabled={isSubmitting}
+                          className="w-full pl-3.5 pr-14 py-2 rounded-xl bg-white border border-[#d8e0e5] text-xs sm:text-sm text-[#111b21] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#075e54]/30 focus:border-[#075e54] transition-all disabled:opacity-60"
+                        />
+                        <span className={`absolute right-3 text-[11px] font-mono pointer-events-none ${feat.length >= 60 ? 'text-amber-600 font-bold' : 'text-[#94a3b8]'}`}>
+                          {feat.length}/60
+                        </span>
+                      </div>
+                      {features.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFeature(idx)}
+                          disabled={isSubmitting}
+                          title="Hapus baris ini"
+                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 flex items-center justify-center font-bold text-sm transition-colors border border-slate-200 hover:border-red-200 cursor-pointer disabled:opacity-50 shrink-0"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {features.length < 4 ? (
+                  <button
+                    type="button"
+                    onClick={handleAddFeature}
+                    disabled={isSubmitting}
+                    className="mt-1 inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl border border-dashed border-[#075e54] bg-white hover:bg-[#e6f7ef] text-[#075e54] text-xs font-headline font-bold transition-all cursor-pointer disabled:opacity-50 self-start"
+                  >
+                    <span>+ Tambah Keunggulan ({4 - features.length} tersisa)</span>
+                  </button>
+                ) : (
+                  <div className="mt-1 text-center py-1.5 px-3 rounded-xl bg-[#e6f7ef] border border-[#bce8d4] text-[#075e54] text-xs font-semibold">
+                    Maksimal 4 keunggulan telah tercapai
+                  </div>
+                )}
+              </div>
+
+              {/* Field 9: Upload Icon Aplikasi */}
+              <div className="flex flex-col gap-1.5">
+                <label className="font-headline text-xs font-bold text-[#111b21] uppercase tracking-wider">
+                  Upload Icon Aplikasi <span className="text-red-500">*</span>
+                </label>
+
+                {/* Hidden Native File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,image/gif"
+                  onChange={handleFileChange}
+                  disabled={isSubmitting}
+                  className="hidden"
+                />
+
+                {/* Upload Box with Integrated Preview */}
+                <div
+                  onClick={handleTriggerUpload}
+                  className={`group relative w-full border-2 border-dashed border-[#bce8d4] hover:border-[#075e54] bg-[#f7fbf9] hover:bg-[#edf9f3] rounded-2xl p-4 transition-all duration-200 cursor-pointer flex items-center gap-4 ${
+                    isSubmitting ? 'opacity-60 pointer-events-none' : ''
+                  }`}
+                >
+                  {/* Preview Box */}
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-[#d8e0e5] p-2 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden group-hover:scale-105 transition-transform">
+                    {iconPreview ? (
+                      iconPreview.startsWith('data:') || iconPreview.startsWith('blob:') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={iconPreview}
+                          alt="Preview icon"
+                          className="w-full h-full object-contain filter drop-shadow-sm"
+                        />
+                      ) : (
+                        <LocalIconImage
+                          iconPath={iconPreview}
+                          altOverride="Preview icon"
+                          className="w-full h-full object-contain filter drop-shadow-sm"
+                        />
+                      )
+                    ) : (
+                      <svg
+                        className="w-8 h-8 text-[#8696a0]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Upload Action Description */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-headline text-xs font-bold text-[#075e54] group-hover:underline">
+                        {iconPreview ? 'Klik untuk mengganti icon' : 'Klik untuk unggah icon gambar'}
+                      </span>
+                      <span className="text-[10px] bg-[#e6f7ef] text-[#075e54] px-2 py-0.5 rounded-full font-bold">
+                        Format Gambar
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#54656f] mt-0.5 truncate">
+                      {iconPreview
+                        ? selectedFile
+                          ? `File dipilih: ${selectedFile.name}`
+                          : 'Icon saat ini aktif. Klik untuk memilih gambar pengganti.'
+                        : 'Hanya format PNG, JPG, JPEG, WebP, SVG, GIF (Maks. 5MB).'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. FIXED DOCKED FOOTER */}
+            <div className="flex items-center justify-between px-6 py-3.5 sm:px-7 sm:py-4 border-t border-[#e9edf0] bg-[#fbfcfc] shrink-0">
+              <span className="text-[11.5px] text-[#54656f] hidden sm:inline">
+                <span className="text-red-500 font-bold">*</span> Wajib diisi
+              </span>
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl border border-[#d8e0e5] bg-white text-xs font-headline font-bold text-[#54656f] hover:bg-[#f0f2f5] hover:text-[#111b21] transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  id="submitAppModalBtn"
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#075e54] hover:bg-[#064e46] active:bg-[#053e37] text-white font-headline text-xs font-bold shadow-[0_4px_12px_rgba(7,94,84,0.25)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{isEditMode ? 'Simpan Perubahan' : 'Simpan Aplikasi'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
           </form>
         </div>
       </div>

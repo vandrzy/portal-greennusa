@@ -208,30 +208,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (title.length > 255) {
+    if (title.length > 60) {
       return NextResponse.json(
-        { success: false, message: 'Judul aplikasi maksimal 255 karakter' },
+        { success: false, message: 'Judul aplikasi maksimal 60 karakter' },
         { status: 400 }
       );
     }
 
-    if (name.length > 150) {
+    if (name.length > 25) {
       return NextResponse.json(
-        { success: false, message: 'Nama aplikasi maksimal 150 karakter' },
+        { success: false, message: 'Nama aplikasi maksimal 25 karakter' },
         { status: 400 }
       );
     }
 
-    if (appType.length > 150) {
+    if (appType.length > 25) {
       return NextResponse.json(
-        { success: false, message: 'Jenis aplikasi maksimal 150 karakter' },
+        { success: false, message: 'Jenis aplikasi maksimal 25 karakter' },
         { status: 400 }
       );
     }
 
-    if (tagline.length > 255) {
+    if (tagline.length > 70) {
       return NextResponse.json(
-        { success: false, message: 'Tagline aplikasi maksimal 255 karakter' },
+        { success: false, message: 'Tagline aplikasi maksimal 70 karakter' },
+        { status: 400 }
+      );
+    }
+
+    if (description.length > 200) {
+      return NextResponse.json(
+        { success: false, message: 'Deskripsi aplikasi maksimal 200 karakter' },
         { status: 400 }
       );
     }
@@ -245,11 +252,17 @@ export async function POST(request: NextRequest) {
     }
     const prismaCategory = (normCategory === 'pemerintah' ? 'pemerintahan' : normCategory) as AppCategory;
 
-    // Validasi Keunggulan (Maksimal 4 item)
+    // Validasi Keunggulan (Maksimal 4 item, maks. 60 karakter/item)
     const cleanedFeatures = parseFeatures(featuresRaw);
     if (cleanedFeatures.length > 4) {
       return NextResponse.json(
         { success: false, message: 'Keunggulan aplikasi maksimal 4 poin.' },
+        { status: 400 }
+      );
+    }
+    if (cleanedFeatures.some((item) => item.length > 60)) {
+      return NextResponse.json(
+        { success: false, message: 'Tiap item keunggulan aplikasi maksimal 60 karakter' },
         { status: 400 }
       );
     }
@@ -282,12 +295,12 @@ export async function POST(request: NextRequest) {
         return tx.application.create({
           data: {
             slug,
-            title,
-            name,
-            appType,
-            tagline,
-            features: cleanedFeatures,
-            description,
+            title: title.slice(0, 60),
+            name: name.slice(0, 25),
+            appType: appType.slice(0, 25),
+            tagline: tagline.slice(0, 70),
+            features: cleanedFeatures.map((f) => f.slice(0, 60)),
+            description: description.slice(0, 200),
             category: prismaCategory,
             iconUrl: savedIconPath!,
             appImage: null,
