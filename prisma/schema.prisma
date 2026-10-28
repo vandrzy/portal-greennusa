@@ -75,17 +75,4 @@ model PortalContent {
   @@map("portal_contents")
 }
 
-model Theme {
-  id                String   @id @default(uuid())
-  name              String   @db.VarChar(150)
-  bgImage           String   @map("bg_image") @db.VarChar(255)
-  modalOverlayColor String   @map("modal_overlay_color") @db.VarChar(100)
-  isActive          Boolean  @default(false) @map("is_active")
-  isDefault         Boolean  @default(false) @map("is_default")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  @@map("themes")
-}
-
 

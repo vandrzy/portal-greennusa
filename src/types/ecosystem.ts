@@ -37,17 +37,6 @@ export interface PortalFolderConfig {
   glowColor: string;
 }
 
-export interface ThemeItem {
-  id: string;
-  name: string;
-  bgImage: string;
-  modalOverlayColor: string;
-  isActive: boolean;
-  isDefault: boolean;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
-
 export interface PortalModalContent {
   badge: string;
   title: string;

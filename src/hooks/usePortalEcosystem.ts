@@ -63,7 +63,7 @@ export function usePortalEcosystem(): UsePortalEcosystemReturn {
       setIsLoading(true);
       setError(null);
 
-      // Memanggil /api/apps dan /api/kontenportal secara paralel (TANPA /api/themes/active)
+      // Memanggil /api/apps dan /api/kontenportal secara paralel
       const [appsRes, contentRes] = await Promise.all([
         fetch('/api/apps', { cache: 'no-store' }).catch(() => null),
         fetch('/api/kontenportal', { cache: 'no-store' }).catch(() => null),

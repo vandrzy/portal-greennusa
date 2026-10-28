@@ -36,13 +36,11 @@ Sistem ini berfungsi sebagai *Single Entry Point* (gerbang utama) bagi klien, mi
 
 * **Autentikasi Berbasis JWT Cookie:** Dilindungi oleh Next.js Middleware (`src/middleware.ts`) dan validasi sesi (`src/lib/auth.ts`) menggunakan *HTTP-Only Cookie*.
 
-* **Dashboard Statistik (`/admin/dashboard`):** Menampilkan ringkasan total aplikasi, distribusi aplikasi Pemerintahan vs Swasta, serta status tema aktif secara *real-time*.
+* **Dashboard Statistik (`/admin/dashboard`):** Menampilkan ringkasan total aplikasi serta distribusi aplikasi Pemerintahan vs Swasta secara *real-time*.
 
 * **Manajemen Aplikasi (`/admin/aplikasi`):** Fitur CRUD (*Create, Read, Update, Delete*) daftar aplikasi lengkap dengan fitur *upload* ikon/gambar aplikasi yang langsung divalidasi (*Magic Bytes validation*).
 
-* **Manajemen Konten Portal (`/admin/kontenportal`):** Mengubah logo perusahaan, judul *Hero Header*, subjudul, teks *footer*, serta nomor dan *template* pesan WhatsApp tanpa perlu mengubah kode program.
-
-* **Manajemen Tema (`/admin/tema`):** Membuat, mengubah, mengunggah gambar latar (*background theme*), memilih skema warna, dan mengaktifkan tema portal dengan sekali klik.
+* **Manajemen Konten Portal (`/admin/kontenportal`):** Mengubah logo perusahaan, nomor WhatsApp, serta ketiga modal layanan (Request Demo, Jasa Pembuatan Website, Buat Aplikasi Custom).
 
 ### C. Sistem Penyimpanan Aset Lokal Aman (`upload/assets`)
 
@@ -68,32 +66,31 @@ Sistem ini berfungsi sebagai *Single Entry Point* (gerbang utama) bagi klien, mi
 portal-greennusa-use-next-js/
 ├── prisma/
 │   ├── migrations/              # Riwayat migrasi tabel database
-│   ├── schema.prisma            # Skema database Prisma (User, App, PortalContent, Theme)
+│   ├── schema.prisma            # Skema database Prisma (User, App, PortalContent)
 │   └── seed.ts                  # Script pengisian data awal (seeding)
 ├── src/
 │   ├── app/
-│   │   ├── admin/               # Halaman CMS Admin (dashboard, aplikasi, kontenportal, tema)
-│   │   ├── api/                 # Backend API Route Handlers (auth, apps, themes, assets, dll)
+│   │   ├── admin/               # Halaman CMS Admin (dashboard, aplikasi, kontenportal, pengaturan)
+│   │   ├── api/                 # Backend API Route Handlers (auth, apps, assets, kontenportal, dll)
 │   │   ├── login/               # Halaman Login Admin
 │   │   ├── layout.tsx           # Root Layout Next.js
 │   │   └── page.tsx             # Halaman Utama Portal Publik
 │   ├── components/              # Komponen UI (folder card, modal, header, footer, common)
 │   ├── context/                 # React Context untuk manajemen state aplikasi admin
 │   ├── data/                    # Data referensi awal aplikasi ekosistem
-│   ├── hooks/                   # Custom React Hooks (useEscapeKey, useModalScrollLock)
+│   ├── hooks/                   # Custom React Hooks
 │   ├── lib/
 │   │   ├── assetHelper.ts       # Proteksi keamanan pembacaan file & HTTP caching
 │   │   ├── auth.ts              # Utilitas JWT & verifikasi sesi admin
 │   │   ├── baseFileStorage.ts   # Engine utama validasi & penyimpanan upload gambar
 │   │   ├── iconStorage.ts       # Manajemen file ikon/gambar aplikasi
 │   │   ├── logoStorage.ts       # Manajemen file logo portal
-│   │   ├── themeStorage.ts      # Manajemen file background tema
 │   │   └── prisma.ts            # Singleton koneksi Prisma Client
 │   ├── middleware.ts            # Proteksi route /admin dan /api/admin
 │   ├── styles/                  # Animasi CSS portal
 │   └── types/                   # Definisi tipe data TypeScript
 ├── upload/
-│   └── assets/                  # Direktori penyimpanan fisik gambar (appImages, backgroundTheme, icons, logo)
+│   └── assets/                  # Direktori penyimpanan fisik gambar (appImages, icons, logo)
 ├── next.config.mjs              # Konfigurasi Next.js (dioptimasi untuk memori VPS/cPanel)
 ├── package.json                 # Daftar dependensi dan script npm
 └── server.js                    # Entrypoint utama untuk cPanel Node.js Selector / PM2
@@ -208,11 +205,8 @@ portal-greennusa-use-next-js/
 
      * Klik **"Simpan Perubahan"** untuk langsung menerapkan ke halaman depan.
 
-   * **Kelola Tema (`/admin/tema`):**
-
-     * Tambah tema baru dengan mengunggah gambar latar (*background*) atau mengatur kode warna utama.
-
-     * Klik tombol **"Aktifkan"** pada salah satu kartu tema untuk menjadikannya tema utama di halaman publik.
+   * **Pengaturan Admin (`/admin/pengaturan`):**
+     * Mengubah profil identitas admin dan reset password akun.
 
 ## 6. Cara Deployment ke VPS (cPanel & Linux Non-Panel)
 
