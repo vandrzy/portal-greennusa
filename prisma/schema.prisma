@@ -47,24 +47,30 @@ model Application {
 }
 
 model PortalContent {
-  id              Int      @id @default(autoincrement())
-  logoUrl         String   @default("/assets/logo/logo-green.png") @map("logo_url")
-  headerText      String   @map("header_text")
-  paragraphText   String   @db.Text @map("paragraph_text")
+  id                  Int      @id @default(autoincrement())
+  logoUrl             String   @default("/assets/logo/logo-green.png") @map("logo_url")
+  whatsappLink        String   @default("https://wa.me/6281348039947") @map("whatsapp_link")
 
-  // Bagian Depan Folder 1 (Pemerintahan) - 2 Input
-  folder1Title    String   @map("folder1_title")
-  folder1Subtitle String   @map("folder1_subtitle")
+  // Modal 1: Request Demo
+  requestDemoBadge    String   @default("Layanan Utama") @map("request_demo_badge")
+  requestDemoTitle    String   @default("Request Live Demo & Konsultasi") @map("request_demo_title")
+  requestDemoDesc     String?  @db.Text @map("request_demo_desc")
+  requestDemoFeatures Json     @default("[]") @map("request_demo_features")
 
-  // Bagian Depan Folder 2 (Swasta) - 2 Input
-  folder2Title    String   @map("folder2_title")
-  folder2Subtitle String   @map("folder2_subtitle")
+  // Modal 2: Jasa Buat Website
+  buatWebsiteBadge    String   @default("Web Development") @map("buat_website_badge")
+  buatWebsiteTitle    String   @default("Jasa Pembuatan Website & Portal Instansi") @map("buat_website_title")
+  buatWebsiteDesc     String?  @db.Text @map("buat_website_desc")
+  buatWebsiteFeatures Json     @default("[]") @map("buat_website_features")
 
-  // Link Floating WhatsApp
-  whatsappLink    String   @map("whatsapp_link")
+  // Modal 3: Buat Aplikasi Custom
+  buatAplikasiBadge    String   @default("Custom Software") @map("buat_aplikasi_badge")
+  buatAplikasiTitle    String   @default("Pengembangan Aplikasi iOS, Android & ERP") @map("buat_aplikasi_title")
+  buatAplikasiDesc     String?  @db.Text @map("buat_aplikasi_desc")
+  buatAplikasiFeatures Json     @default("[]") @map("buat_aplikasi_features")
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   @@map("portal_contents")
 }

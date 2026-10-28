@@ -121,11 +121,50 @@ export const PortalMainView: React.FC = () => {
     });
 
     Object.keys(SERVICE_INFO).forEach((k) => {
-      map[k] = SERVICE_INFO[k];
+      map[k] = { ...SERVICE_INFO[k] };
     });
 
+    if (portalContent) {
+      if (map['request-demo']) {
+        map['request-demo'] = {
+          ...map['request-demo'],
+          badge: portalContent.requestDemoBadge || map['request-demo'].badge,
+          title: portalContent.requestDemoTitle || map['request-demo'].title,
+          desc: portalContent.requestDemoDesc || map['request-demo'].desc,
+          features:
+            Array.isArray(portalContent.requestDemoFeatures) && portalContent.requestDemoFeatures.length > 0
+              ? portalContent.requestDemoFeatures
+              : map['request-demo'].features,
+        };
+      }
+      if (map['buat-website']) {
+        map['buat-website'] = {
+          ...map['buat-website'],
+          badge: portalContent.buatWebsiteBadge || map['buat-website'].badge,
+          title: portalContent.buatWebsiteTitle || map['buat-website'].title,
+          desc: portalContent.buatWebsiteDesc || map['buat-website'].desc,
+          features:
+            Array.isArray(portalContent.buatWebsiteFeatures) && portalContent.buatWebsiteFeatures.length > 0
+              ? portalContent.buatWebsiteFeatures
+              : map['buat-website'].features,
+        };
+      }
+      if (map['buat-aplikasi']) {
+        map['buat-aplikasi'] = {
+          ...map['buat-aplikasi'],
+          badge: portalContent.buatAplikasiBadge || map['buat-aplikasi'].badge,
+          title: portalContent.buatAplikasiTitle || map['buat-aplikasi'].title,
+          desc: portalContent.buatAplikasiDesc || map['buat-aplikasi'].desc,
+          features:
+            Array.isArray(portalContent.buatAplikasiFeatures) && portalContent.buatAplikasiFeatures.length > 0
+              ? portalContent.buatAplikasiFeatures
+              : map['buat-aplikasi'].features,
+        };
+      }
+    }
+
     return { govApps: gov, bizApps: biz, allAppsMap: map };
-  }, [apps]);
+  }, [apps, portalContent]);
 
   // Load external scripts (Three.js, GSAP, Anime.js, fonts, fontawesome)
   useEffect(() => {
@@ -251,7 +290,7 @@ export const PortalMainView: React.FC = () => {
     }
     hideCardTimeoutRef.current = window.setTimeout(() => {
       hideGlassCard();
-    }, 95);
+    }, 300);
   }, [hideGlassCard]);
 
   const updateGlassCardOnHover = useCallback(
@@ -790,7 +829,6 @@ export const PortalMainView: React.FC = () => {
         ring1Ref={introRing1Ref}
         ring2Ref={introRing2Ref}
         logoUrl={portalContent?.logoUrl}
-        headerText={portalContent?.headerText}
         onSkip={handleSkipIntro}
         onMouseEnter={() => setIsPointing(true)}
         onMouseLeave={() => setIsPointing(false)}
@@ -925,8 +963,6 @@ export const PortalMainView: React.FC = () => {
               folderBizRef={folderBizRef}
               activeCategory={activeCategory}
               folderHubOrbitClass={folderHubOrbitClass}
-              folder1Title={portalContent?.folder1Title}
-              folder2Title={portalContent?.folder2Title}
               govCount={govApps.length}
               bizCount={bizApps.length}
               onToggleCategory={toggleFolderCategory}
@@ -975,6 +1011,9 @@ export const PortalMainView: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 data-app-id="request-demo"
+                onClick={(e) => {
+                  updateGlassCardOnHover('request-demo', e.currentTarget);
+                }}
                 onMouseEnter={(e) => {
                   setIsPointing(true);
                   updateGlassCardOnHover('request-demo', e.currentTarget);
@@ -1020,6 +1059,10 @@ export const PortalMainView: React.FC = () => {
               <button
                 type="button"
                 data-app-id="buat-website"
+                onClick={(e) => {
+                  setIsPointing(true);
+                  updateGlassCardOnHover('buat-website', e.currentTarget);
+                }}
                 onMouseEnter={(e) => {
                   setIsPointing(true);
                   updateGlassCardOnHover('buat-website', e.currentTarget);
@@ -1039,6 +1082,10 @@ export const PortalMainView: React.FC = () => {
               <button
                 type="button"
                 data-app-id="buat-aplikasi"
+                onClick={(e) => {
+                  setIsPointing(true);
+                  updateGlassCardOnHover('buat-aplikasi', e.currentTarget);
+                }}
                 onMouseEnter={(e) => {
                   setIsPointing(true);
                   updateGlassCardOnHover('buat-aplikasi', e.currentTarget);
@@ -1090,7 +1137,6 @@ export const PortalMainView: React.FC = () => {
                 }
               }}
               onMouseLeave={() => scheduleHideGlassCard()}
-              onCopyDemo={handleCopyDemo}
               onHoverAction={() => setIsPointing(true)}
               onLeaveAction={() => setIsPointing(false)}
             />

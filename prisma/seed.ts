@@ -61,17 +61,40 @@ async function main() {
     console.log(`📦 Seeded Application: [${createdApp.category}] ${createdApp.name} (${createdApp.slug}) -> ID: ${createdApp.id}`);
   }
 
-  // 3. Seed data awal Konten Portal berdasarkan konten statis yang ada saat ini
+  // 3. Seed data awal Konten Portal
   const portalContentData = {
     logoUrl: '/assets/logo/logo-green.png',
-    headerText: 'Satu Pintu Akses Aplikasi GreenNusa Computindo',
-    paragraphText:
-      'Portal integrasi seluruh layanan digital dan aplikasi ekosistem resmi GreenNusa Computindo guna mendukung efisiensi serta kemudahan akses solusi teknologi bagi instansi pemerintahan dan sektor swasta.',
-    folder1Title: 'Pemerintahan',
-    folder1Subtitle: 'EKOSISTEM APLIKASI',
-    folder2Title: 'Swasta',
-    folder2Subtitle: 'EKOSISTEM APLIKASI',
     whatsappLink: 'https://wa.me/6281348039947',
+    requestDemoBadge: 'Layanan Utama',
+    requestDemoTitle: 'Request Live Demo & Konsultasi',
+    requestDemoDesc:
+      'Jadwalkan sesi demo interaktif bersama konsultan IT GreenNusa Computindo atau uji coba langsung aplikasi Pemerintahan & Solusi Bisnis.',
+    requestDemoFeatures: [
+      'Akses sandbox penuh ke seluruh modul aplikasi',
+      'Konsultasi arsitektur sistem & integrasi API',
+      'Dukungan penuh untuk iOS, Android & Web Cloud',
+      'Estimasi pengembangan & implementasi transparan',
+    ],
+    buatWebsiteBadge: 'Web Development',
+    buatWebsiteTitle: 'Jasa Pembuatan Website & Portal Instansi',
+    buatWebsiteDesc:
+      'Bangun portal pemerintahan, website korporasi, hingga web app interaktif 3D dengan performa tinggi, keamanan berlapis, dan desain modern.',
+    buatWebsiteFeatures: [
+      'Desain UI/UX eksklusif & responsif di semua perangkat',
+      'Optimasi kecepatan, keamanan SSL & standar SEO',
+      'CMS kustom yang mudah dikelola tim internal',
+      'Garansi pemeliharaan & dukungan teknis berkala',
+    ],
+    buatAplikasiBadge: 'Custom Software',
+    buatAplikasiTitle: 'Pengembangan Aplikasi iOS, Android & ERP',
+    buatAplikasiDesc:
+      'Kembangkan aplikasi mobile (Apple iOS & Android) serta sistem informasi manajemen terintegrasi sesuai proses bisnis organisasi Anda.',
+    buatAplikasiFeatures: [
+      'Aplikasi Native / Hybrid untuk Apple iOS & Android',
+      'Integrasi database cloud, pembayaran & GIS spasial',
+      'Arsitektur scalable untuk ribuan pengguna serentak',
+      'Dokumentasi teknis & pelatihan pengguna lengkap',
+    ],
   };
 
   const portalContent = await prisma.portalContent.upsert({
@@ -83,7 +106,7 @@ async function main() {
     },
   });
 
-  console.log(`📑 Seeded PortalContent: ID ${portalContent.id} (${portalContent.headerText})`);
+  console.log(`📑 Seeded PortalContent: ID ${portalContent.id}`);
 
   // 4. Seed data awal untuk Pengaturan Tema (Theme)
   const defaultThemeData = {

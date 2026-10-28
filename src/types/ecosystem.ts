@@ -48,16 +48,32 @@ export interface ThemeItem {
   updatedAt?: string | Date;
 }
 
+export interface PortalModalContent {
+  badge: string;
+  title: string;
+  desc: string;
+  features: string[];
+}
+
 export interface PortalContentData {
   id: number;
   logoUrl: string;
-  headerText: string;
-  paragraphText: string;
-  folder1Title: string;
-  folder1Subtitle: string;
-  folder2Title: string;
-  folder2Subtitle: string;
   whatsappLink: string;
+  // Modal 1: Request Demo
+  requestDemoBadge: string;
+  requestDemoTitle: string;
+  requestDemoDesc: string;
+  requestDemoFeatures: string[];
+  // Modal 2: Jasa Buat Website
+  buatWebsiteBadge: string;
+  buatWebsiteTitle: string;
+  buatWebsiteDesc: string;
+  buatWebsiteFeatures: string[];
+  // Modal 3: Buat Aplikasi Custom
+  buatAplikasiBadge: string;
+  buatAplikasiTitle: string;
+  buatAplikasiDesc: string;
+  buatAplikasiFeatures: string[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

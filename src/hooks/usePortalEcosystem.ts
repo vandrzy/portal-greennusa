@@ -7,14 +7,37 @@ import { PEMERINTAHAN_APPS, SWASTA_APPS, ECOSYSTEM_APPS } from '@/data/ecosystem
 const DEFAULT_PORTAL_CONTENT: PortalContentData = {
   id: 1,
   logoUrl: '/api/assets/logo/logo green.png',
-  headerText: 'Satu Pintu Akses Aplikasi GreenNusa Computindo',
-  paragraphText:
-    'Portal integrasi seluruh layanan digital dan aplikasi ekosistem resmi GreenNusa Computindo guna mendukung efisiensi serta kemudahan akses solusi teknologi bagi instansi pemerintahan dan sektor swasta.',
-  folder1Title: 'Pemerintahan & Publik',
-  folder1Subtitle: 'EKOSISTEM APLIKASI',
-  folder2Title: 'Swasta & Bisnis',
-  folder2Subtitle: 'EKOSISTEM APLIKASI',
   whatsappLink: 'https://wa.me/6281348039947',
+  requestDemoBadge: 'Layanan Utama',
+  requestDemoTitle: 'Request Live Demo & Konsultasi',
+  requestDemoDesc:
+    'Jadwalkan sesi demo interaktif bersama konsultan IT GreenNusa Computindo atau uji coba langsung aplikasi Pemerintahan & Solusi Bisnis.',
+  requestDemoFeatures: [
+    'Akses sandbox penuh ke seluruh modul aplikasi',
+    'Konsultasi arsitektur sistem & integrasi API',
+    'Dukungan penuh untuk iOS, Android & Web Cloud',
+    'Estimasi pengembangan & implementasi transparan',
+  ],
+  buatWebsiteBadge: 'Web Development',
+  buatWebsiteTitle: 'Jasa Pembuatan Website & Portal Instansi',
+  buatWebsiteDesc:
+    'Bangun portal pemerintahan, website korporasi, hingga web app interaktif 3D dengan performa tinggi, keamanan berlapis, dan desain modern.',
+  buatWebsiteFeatures: [
+    'Desain UI/UX eksklusif & responsif di semua perangkat',
+    'Optimasi kecepatan, keamanan SSL & standar SEO',
+    'CMS kustom yang mudah dikelola tim internal',
+    'Garansi pemeliharaan & dukungan teknis berkala',
+  ],
+  buatAplikasiBadge: 'Custom Software',
+  buatAplikasiTitle: 'Pengembangan Aplikasi iOS, Android & ERP',
+  buatAplikasiDesc:
+    'Kembangkan aplikasi mobile (Apple iOS & Android) serta sistem informasi manajemen terintegrasi sesuai proses bisnis organisasi Anda.',
+  buatAplikasiFeatures: [
+    'Aplikasi Native / Hybrid untuk Apple iOS & Android',
+    'Integrasi database cloud, pembayaran & GIS spasial',
+    'Arsitektur scalable untuk ribuan pengguna serentak',
+    'Dokumentasi teknis & pelatihan pengguna lengkap',
+  ],
 };
 
 export interface UsePortalEcosystemReturn {
@@ -59,10 +82,35 @@ export function usePortalEcosystem(): UsePortalEcosystemReturn {
       if (contentRes && contentRes.ok) {
         const contentJson = await contentRes.json();
         if (contentJson.success && contentJson.data) {
+          const d = contentJson.data;
           setPortalContent({
-            ...DEFAULT_PORTAL_CONTENT,
-            ...contentJson.data,
-            logoUrl: contentJson.data.logoUrl || DEFAULT_PORTAL_CONTENT.logoUrl,
+            id: d.id || DEFAULT_PORTAL_CONTENT.id,
+            logoUrl: d.logoUrl || DEFAULT_PORTAL_CONTENT.logoUrl,
+            whatsappLink: d.whatsappLink || DEFAULT_PORTAL_CONTENT.whatsappLink,
+
+            requestDemoBadge: d.requestDemoBadge || DEFAULT_PORTAL_CONTENT.requestDemoBadge,
+            requestDemoTitle: d.requestDemoTitle || DEFAULT_PORTAL_CONTENT.requestDemoTitle,
+            requestDemoDesc: d.requestDemoDesc || DEFAULT_PORTAL_CONTENT.requestDemoDesc,
+            requestDemoFeatures:
+              Array.isArray(d.requestDemoFeatures) && d.requestDemoFeatures.length > 0
+                ? d.requestDemoFeatures
+                : DEFAULT_PORTAL_CONTENT.requestDemoFeatures,
+
+            buatWebsiteBadge: d.buatWebsiteBadge || DEFAULT_PORTAL_CONTENT.buatWebsiteBadge,
+            buatWebsiteTitle: d.buatWebsiteTitle || DEFAULT_PORTAL_CONTENT.buatWebsiteTitle,
+            buatWebsiteDesc: d.buatWebsiteDesc || DEFAULT_PORTAL_CONTENT.buatWebsiteDesc,
+            buatWebsiteFeatures:
+              Array.isArray(d.buatWebsiteFeatures) && d.buatWebsiteFeatures.length > 0
+                ? d.buatWebsiteFeatures
+                : DEFAULT_PORTAL_CONTENT.buatWebsiteFeatures,
+
+            buatAplikasiBadge: d.buatAplikasiBadge || DEFAULT_PORTAL_CONTENT.buatAplikasiBadge,
+            buatAplikasiTitle: d.buatAplikasiTitle || DEFAULT_PORTAL_CONTENT.buatAplikasiTitle,
+            buatAplikasiDesc: d.buatAplikasiDesc || DEFAULT_PORTAL_CONTENT.buatAplikasiDesc,
+            buatAplikasiFeatures:
+              Array.isArray(d.buatAplikasiFeatures) && d.buatAplikasiFeatures.length > 0
+                ? d.buatAplikasiFeatures
+                : DEFAULT_PORTAL_CONTENT.buatAplikasiFeatures,
           });
         }
       }

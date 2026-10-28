@@ -10,7 +10,7 @@ export interface PortalGlassCardProps {
   isVisible: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onCopyDemo: () => void;
+  onCopyDemo?: () => void;
   onHoverAction: () => void;
   onLeaveAction: () => void;
 }
@@ -23,7 +23,6 @@ export const PortalGlassCard: React.FC<PortalGlassCardProps> = ({
   isVisible,
   onMouseEnter,
   onMouseLeave,
-  onCopyDemo,
   onHoverAction,
   onLeaveAction,
 }) => {
@@ -83,7 +82,7 @@ export const PortalGlassCard: React.FC<PortalGlassCardProps> = ({
         {currentGlassApp.desc}
       </p>
 
-      <div id="glass-app-features" className="grid grid-cols-1 gap-1.5 mb-5 text-xs">
+      <div id="glass-app-features" className="grid grid-cols-1 gap-1.5 text-xs">
         {currentGlassApp.features.map((feat, idx) => (
           <div
             key={idx}
@@ -93,20 +92,6 @@ export const PortalGlassCard: React.FC<PortalGlassCardProps> = ({
             <span className="truncate">{feat}</span>
           </div>
         ))}
-      </div>
-
-      <div className="pt-3.5 border-t border-white/20 flex items-center justify-between gap-2">
-        <button
-          id="btn-copy-demo"
-          type="button"
-          onClick={onCopyDemo}
-          onMouseEnter={onHoverAction}
-          onMouseLeave={onLeaveAction}
-          className="interactive-target px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-[11px] font-bold text-white inline-flex items-center gap-2 transition-colors cursor-pointer"
-        >
-          <i className="fa-regular fa-copy"></i>
-          <span>demo@green-nusa.net</span>
-        </button>
       </div>
     </div>
   );
